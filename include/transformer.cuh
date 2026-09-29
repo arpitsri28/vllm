@@ -37,3 +37,12 @@ int transformerForward(
     TransformerBuffers& buffers,
     int num_tokens
 );
+
+int decodeForward(
+    cublasHandle_t cublas_handle,
+    __nv_bfloat16* hidden_states,
+    const ModelWeights& weights,
+    KVCache& cache,
+    TransformerBuffers& buffers,
+    float* logits
+);

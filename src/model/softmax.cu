@@ -1,50 +1,65 @@
-__global__ void softmaxKernel(__nv_bfloat16 *input, int num_tokens) {
-    __shared__ float row[1024]; 
+__global__ void softmaxKernel(__nv_bfloat16* input, int row_length) {
+    __shared__ float row[1024];
     __shared__ float max_val;
-    int workIndex = blockIdx.x * num_tokens + threadIdx.x;
-    __nv_bfloat16 token = input[workIndex];
-    row[threadIdx.x] = (float)token;
+    int workIndex = blockIdx.x * row_length + threadIdx.x;
+    float token = (float)input[workIndex];
+    row[threadIdx.x] = token;
     __syncthreads();
-
-    for (int i = 1; i < num_tokens; i = i * 2) {
-        if (threadIdx.x % (i * 2) == 0 && threadIdx.x + i < num_tokens) {
-            row[threadIdx.x] = fmaxf(row[threadIdx.x], row[threadIdx.x + i]);
+    for (int i = 1; i < row_length; i *= 2) {
+        if ( threadIdx.x % (i * 2) == 0 && threadIdx.x + i < row_length) {
+            row[threadIdx.x] =
+                fmaxf(
+                    row[threadIdx.x],
+                    row[threadIdx.x + i]
+                );
         }
         __syncthreads();
     }
+
     if (threadIdx.x == 0) {
-        max_val = row[0]; 
+        max_val = row[0];
     }
+
     __syncthreads();
 
-    row[threadIdx.x] = expf((float)token - max_val);
+    row[ threadIdx.x ] =
+        expf(token - max_val);
+
     __syncthreads();
 
-    for (int i = 1; i < num_tokens; i = i * 2) {
-        if (threadIdx.x % (i * 2) == 0 && threadIdx.x + i < num_tokens) {
+    for (int i = 1; i < row_length; i *= 2) {
+
+        if ( threadIdx.x % (i * 2) == 0 && threadIdx.x + i < row_length) {
             row[threadIdx.x] = row[threadIdx.x] + row[threadIdx.x + i];
         }
+
         __syncthreads();
     }
 
-    input[workIndex] = (__nv_bfloat16)(expf((float)token - max_val) / row[0]);
+    input[workIndex] = (__nv_bfloat16)(expf(token - max_val) / row[0]);
 }
 
-
-void softmax(__nv_bfloat16 *input, int num_tokens)
-{
-    if (num_tokens > 1024)
-    {
-        std::cout << "Can't launch more than 1024 threads on RTX 5090, Softmax kernel not launched";
+void softmaxRows(__nv_bfloat16* input, int num_rows, int row_length) {
+    if (row_length > 1024) {
+        std::cout
+            << "Softmax row length exceeds 1024; kernel not launched"
+            << std::endl;
         return;
     }
 
-    softmaxKernel<<<num_tokens * NUM_Q_HEADS, num_tokens>>>(input, num_tokens);
+    softmaxKernel<<<num_rows, row_length>>>(
+        input,
+        row_length
+    );
+
 #ifdef DEBUG
-    cudaError error = cudaGetLastError();
-    if (error != cudaError::cudaSuccess)
-    {
-        std::cout << "CUDA last error: " << cudaGetLastError() << std::endl;
+    cudaError_t error = cudaGetLastError();
+
+    if (error != cudaSuccess) {
+        std::cout
+            << "CUDA last error: "
+            << cudaGetErrorString(error)
+            << std::endl;
     }
 #endif
 }

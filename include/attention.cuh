@@ -37,3 +37,11 @@ void computeDecodeAttentionScores(
     __nv_bfloat16* attn_scores,
     int total_seq_len
 );
+
+void decodeAttentionScoresTimesV(
+    cublasHandle_t cublas_handle,
+    const __nv_bfloat16* attn_scores,
+    const __nv_bfloat16* v_cache_layer,
+    __nv_bfloat16* attention_output,
+    int total_seq_len
+);

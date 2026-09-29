@@ -43,7 +43,91 @@ void computeAttentionScores(cublasHandle_t cublas_handle, __nv_bfloat16* q_proj,
 }
 
 void computeDecodeAttentionScores(cublasHandle_t cublas_handle, const __nv_bfloat16* q_proj, const __nv_bfloat16* k_cache_layer, __nv_bfloat16* attn_scores, int total_seq_len) {
-    
+    constexpr int GQA_Q_TO_K_RATIO = 4;
+    constexpr int HEAD_DIM = 64;
+
+    const float attn_alpha = 1.0f / 8.0f; 
+    const float attn_beta = 0.0f;
+    for (int head = 0; head < NUM_Q_HEADS; ++head) {
+        int k_head_idx = head / GQA_Q_TO_K_RATIO;
+        const __nv_bfloat16* q_head = q_proj + head * HEAD_DIM;
+        const __nv_bfloat16* k_head = k_cache_layer + k_head_idx * HEAD_DIM;
+        __nv_bfloat16* attn_score_head = attn_scores + head * num_tokens;
+        cublasStatus_t status = cublasGemmEx(
+            cublas_handle,
+            CUBLAS_OP_T,
+            CUBLAS_OP_N,
+            total_seq_len,
+            1,
+            HEAD_DIM,
+            &attn_alpha,
+            k_head,
+            CUDA_R_16BF,
+            total_seq_len,
+            q_head,
+            CUDA_R_16BF,
+            KV_DIM,
+            q_head,
+            CUDA_R_16BF,
+            HEAD_DIM,    
+            &attn_beta,
+            attn_score_head,
+            CUDA_R_16BF,
+            total_seq_len,
+            CUBLAS_COMPUTE_32F,
+            CUBLAS_GEMM_DEFAULT);
+        if (status != CUBLAS_STATUS_SUCCESS) {
+            std::cerr
+                << "Decode attention score GEMM failed for head "
+                << head << std::endl;
+        }
+    }
+}
+
+void decodeAttentionScoresTimesV(cublasHandle_t cublas_handle, const __nv_bfloat16* attn_scores, const __nv_bfloat16* v_cache_layer, __nv_bfloat16* attention_output, int total_seq_len) {
+    constexpr int GQA_Q_TO_V_RATIO = 4;
+    constexpr int HEAD_DIM = 64;
+
+    const float alpha = 1.0f;
+    const float beta = 0.0f;
+
+    for (int head = 0; head < NUM_Q_HEADS; ++head) {
+        int v_head_idx = head / GQA_Q_TO_V_RATIO;
+        const __nv_bfloat16* attn_scores_head = attn_scores + head * total_seq_len;
+
+
+        const __nv_bfloat16* v_head = v_cache_layer + v_head_idx * HEAD_DIM;
+
+        __nv_bfloat16* output_head = attention_output + head * HEAD_DIM;
+
+        cublasStatus_t status = cublasGemmEx(
+            cublas_handle,
+            CUBLAS_OP_N,
+            CUBLAS_OP_N,
+            HEAD_DIM,        
+            1,               
+            total_seq_len,   
+            &alpha,
+            v_head,
+            CUDA_R_16BF,
+            KV_DIM,          
+            attn_scores_head,
+            CUDA_R_16BF,
+            total_seq_len,
+            &beta,
+            output_head,
+            CUDA_R_16BF,
+            EMBEDDING_LENGTH,
+            CUBLAS_COMPUTE_32F,
+            CUBLAS_GEMM_DEFAULT
+        );
+
+        if (status != CUBLAS_STATUS_SUCCESS) {
+            std::cerr
+                << "Decode attention x V GEMM failed for head "
+                << head << std::endl;
+        }
+    }
 }
 
 void attentionScoresTimesV(cublasHandle_t cublas_handle, __nv_bfloat16* attn_scores, __nv_bfloat16* v_proj_layer, __nv_bfloat16* attn_scores_v, int num_tokens) {
