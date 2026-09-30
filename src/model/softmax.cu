@@ -1,3 +1,6 @@
+#include "softmax.cuh"
+#include <iostream>
+
 __global__ void softmaxKernel(__nv_bfloat16* input, int row_length) {
     __shared__ float row[1024];
     __shared__ float max_val;

@@ -1,3 +1,9 @@
+#include "causalMask.cuh"
+#include <iostream>
+#include <cmath>
+
+constexpr int NUM_Q_HEADS = 32;
+
 __global__ void causalMaskKernel(__nv_bfloat16 *input, int num_tokens)
 {
     if (threadIdx.x + blockIdx.x * blockDim.x >= num_tokens * num_tokens * NUM_Q_HEADS)

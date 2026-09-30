@@ -1,6 +1,10 @@
 #include "../../include/attention.cuh"
 #include <iostream>
 
+constexpr int NUM_Q_HEADS = 32;
+constexpr int KV_DIM = 512;
+constexpr int EMBEDDING_LENGTH = 2048;
+
 void computeAttentionScores(cublasHandle_t cublas_handle, __nv_bfloat16* q_proj, __nv_bfloat16* k_proj_layer, __nv_bfloat16* attn_scores, int num_tokens) {
     constexpr int GQA_Q_TO_K_RATIO = 4;
     constexpr int HEAD_DIM = 64;
@@ -52,7 +56,7 @@ void computeDecodeAttentionScores(cublasHandle_t cublas_handle, const __nv_bfloa
         int k_head_idx = head / GQA_Q_TO_K_RATIO;
         const __nv_bfloat16* q_head = q_proj + head * HEAD_DIM;
         const __nv_bfloat16* k_head = k_cache_layer + k_head_idx * HEAD_DIM;
-        __nv_bfloat16* attn_score_head = attn_scores + head * num_tokens;
+        __nv_bfloat16* attn_score_head = attn_scores + head * total_seq_len;
         cublasStatus_t status = cublasGemmEx(
             cublas_handle,
             CUBLAS_OP_T,
@@ -62,9 +66,6 @@ void computeDecodeAttentionScores(cublasHandle_t cublas_handle, const __nv_bfloa
             HEAD_DIM,
             &attn_alpha,
             k_head,
-            CUDA_R_16BF,
-            total_seq_len,
-            q_head,
             CUDA_R_16BF,
             KV_DIM,
             q_head,
@@ -300,4 +301,3 @@ void vProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const
         std::cerr << "V projection failed" << std::endl;
     }
 }
-

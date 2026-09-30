@@ -1,4 +1,5 @@
 #include "lm_head.cuh"
+#include <iostream>
 constexpr int VOCAB_SIZE = 128256;
 constexpr int EMBEDDING_LENGTH = 2048;
 

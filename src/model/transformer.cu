@@ -11,41 +11,54 @@
 #include <cublas_v2.h>
 #include "lm_head.cuh"
 #include "argmax.cuh"
-#include "kv_cache.cuh"
+#include "kvcache.cuh"
+#include "causalMask.cuh"
+#include "softmax.cuh"
+#include <algorithm>
+#include <stdexcept>
 constexpr int NUM_LAYERS = 16;
+constexpr int NUM_Q_HEADS = 32;
+constexpr int KV_DIM = 512;
+constexpr int EMBEDDING_LENGTH = 2048;
 
 
-void allocateTransformerBuffers(TransformerBuffers& buffers, int num_tokens) {
-  cudaMalloc((void**)&buffers.rms_output,
+void allocateTransformerBuffers(TransformerBuffers& buffers, int num_tokens, int max_seq_len) {
+  auto allocate = [](void** pointer, size_t bytes) {
+    cudaError_t status = cudaMalloc(pointer, bytes);
+    if (status != cudaSuccess) {
+      throw std::runtime_error(cudaGetErrorString(status));
+    }
+  };
+  allocate((void**)&buffers.rms_output,
             num_tokens * 2048 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.q,
+  allocate((void**)&buffers.q,
             num_tokens * 2048 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.k,
+  allocate((void**)&buffers.k,
             num_tokens * 512 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.v,
+  allocate((void**)&buffers.v,
             num_tokens * 512 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.attn_scores, NUM_Q_HEADS * max_seq_len * sizeof(__nv_bfloat16));
+  allocate((void**)&buffers.attn_scores, NUM_Q_HEADS * std::max(static_cast<size_t>(num_tokens) * num_tokens, static_cast<size_t>(max_seq_len)) * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.attn_output,
+  allocate((void**)&buffers.attn_output,
             num_tokens * 2048 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.o_output,
+  allocate((void**)&buffers.o_output,
             num_tokens * 2048 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.gate,
+  allocate((void**)&buffers.gate,
             num_tokens * 8192 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.up,
+  allocate((void**)&buffers.up,
             num_tokens * 8192 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.down,
+  allocate((void**)&buffers.down,
             num_tokens * 2048 * sizeof(__nv_bfloat16));
 
-  cudaMalloc((void**)&buffers.residual,
+  allocate((void**)&buffers.residual,
             num_tokens * 2048 * sizeof(__nv_bfloat16));
 }
 
@@ -86,7 +99,7 @@ int transformerForward(cublasHandle_t cublas_handle, __nv_bfloat16* hidden_state
     storeKV(cache, layer, buffers.k, buffers.v, num_tokens);
     computeAttentionScores(cublas_handle, buffers.q, buffers.k, buffers.attn_scores, num_tokens);
     causalMask(buffers.attn_scores, num_tokens);
-    softmax(buffers.attn_scores, num_tokens);
+    softmaxRows(buffers.attn_scores, NUM_Q_HEADS * num_tokens, num_tokens);
     attentionScoresTimesV(cublas_handle, buffers.attn_scores, buffers.v, buffers.attn_output, num_tokens);
     outputProjection(cublas_handle, buffers.attn_output, weights.layers[layer].w_o, buffers.o_output, num_tokens);
     residualAdd(hidden_states, buffers.o_output, num_tokens);

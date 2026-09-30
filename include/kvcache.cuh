@@ -22,7 +22,6 @@ void freeKVCache(
 void storeKV(
     KVCache& cache,
     int layer,
-    int start_position,
     const __nv_bfloat16* k,
     const __nv_bfloat16* v,
     int num_tokens

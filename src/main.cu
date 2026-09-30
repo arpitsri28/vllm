@@ -1,4 +1,9 @@
 #include "../include/weights.cuh"
+#include "engine.cuh"
+#include <cuda_runtime.h>
+#include <stdexcept>
+#include <cstdlib>
+#include <filesystem>
 #include <cuda_bf16.h>
 #include <iostream>
 #include <fstream>
@@ -142,16 +147,23 @@ char* copyModelToGPU(const SafeTensorModel& Model)
 {
     size_t size_of_tensors = Model.tensor_data.size();
     char* gpu_tensor_data = nullptr;
-    cudaMalloc(
+    cudaError_t status = cudaMalloc(
         reinterpret_cast<void**>(&gpu_tensor_data),
         size_of_tensors
     );
-    cudaMemcpy(
+    if (status != cudaSuccess) {
+        throw std::runtime_error(cudaGetErrorString(status));
+    }
+    status = cudaMemcpy(
         gpu_tensor_data,
         Model.tensor_data.data(),
         size_of_tensors,
         cudaMemcpyHostToDevice
     );
+    if (status != cudaSuccess) {
+        cudaFree(gpu_tensor_data);
+        throw std::runtime_error(cudaGetErrorString(status));
+    }
     return gpu_tensor_data;
 }
 
@@ -183,7 +195,7 @@ ModelWeights mapWeights(const SafeTensorModel &model, char *gpu_model_weights) {
     layer.w_down = reinterpret_cast<__nv_bfloat16*>(gpu_model_weights + down_proj_offset);
     size_t post_att_offset = model.header["model.layers." + std::to_string(N) + ".post_attention_layernorm.weight"]["data_offsets"][0].get<size_t>();
     layer.post_attention_norm = reinterpret_cast<__nv_bfloat16*>(gpu_model_weights + post_att_offset);
-    mw.layers.push_back(layer)
+    mw.layers.push_back(layer);
   }
   size_t final_norm_offset = model.header["model.norm.weight"]["data_offsets"][0].get<size_t>();
   mw.final_norm = reinterpret_cast<__nv_bfloat16*>(
@@ -200,18 +212,61 @@ std::vector<int> readTokens(const std::string& tokens_path) {
   return data.get<std::vector<int>>();
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    const std::string model_path =
-        "/Users/arpitsrivastav/Desktop/tiny_vLLM/models/"
-        "llama-3.2-1b-instruct/model.safetensors";
+    const std::string model_path = argc > 1 ? argv[1] : "models/llama-3.2-1b-instruct/model.safetensors";
+    const std::string tokens_path = argc > 2 ? argv[2] : "src/tokens.json";
+    char* gpu_tensor_data = nullptr;
+    cublasHandle_t cublas_handle = nullptr;
 
-    SafeTensorModel Model = loadSafeTensors(model_path);
-    char *gpu_tensor_data = copyModelToGPU(Model);
-    ModelWeights w = mapWeights(Model, gpu_tensor_data);
-    std::vector<int> input_tokens = readTokens("/Users/arpitsrivastav/Desktop/tiny_vLLM/src/tokens.json");
-    constexpr int MAX_PROMPT_LEN = 512;
-    int *gpu_input_tokens = nullptr;
-    cudaMalloc(reinterpret_cast<void**>(&gpu_input_tokens), MAX_PROMPT_LEN * sizeof(int));
-    cudaMemcpy(gpu_input_tokens, input_tokens.data(), input_tokens.size() * sizeof(int), cudaMemcpyHostToDevice);
+    try {
+        int max_new_tokens = argc > 3 ? std::stoi(argv[3]) : 32;
+        int max_seq_len = argc > 4 ? std::stoi(argv[4]) : 1024;
+        SafeTensorModel Model = loadSafeTensors(model_path);
+        if (Model.tensor_data.empty()) {
+            throw std::runtime_error("Model contains no tensor data");
+        }
+        gpu_tensor_data = copyModelToGPU(Model);
+        ModelWeights w = mapWeights(Model, gpu_tensor_data);
+        if (cublasCreate(&cublas_handle) != CUBLAS_STATUS_SUCCESS) {
+            throw std::runtime_error("Failed to create cuBLAS handle");
+        }
+        std::vector<int> input_tokens = readTokens(tokens_path);
+        std::vector<int> generated_tokens = generate(cublas_handle, w, input_tokens, max_new_tokens, max_seq_len);
+        for (int token : generated_tokens) {
+            std::cout << token << " ";
+        }
+        std::cout << std::endl;
+
+        cublasDestroy(cublas_handle);
+        cublas_handle = nullptr;
+        cudaFree(gpu_tensor_data);
+        gpu_tensor_data = nullptr;
+
+        if (!generated_tokens.empty()) {
+            auto quote = [](const std::string& value) {
+                std::string result = "'";
+                for (char c : value) {
+                    result += c == '\'' ? "'\\''" : std::string(1, c);
+                }
+                return result + "'";
+            };
+            std::string command = "python3 src/python/tokenizer.py --decode --model " +
+                quote(std::filesystem::absolute(model_path).parent_path().string()) + " --ids";
+            for (int token : generated_tokens) {
+                command += " " + std::to_string(token);
+            }
+            if (std::system(command.c_str()) != 0) {
+                std::cerr << "Detokenization failed; generated token IDs are printed above" << std::endl;
+            }
+        }
+    } catch (const std::exception& error) {
+        if (cublas_handle != nullptr) {
+            cublasDestroy(cublas_handle);
+        }
+        cudaFree(gpu_tensor_data);
+        std::cerr << error.what() << std::endl;
+        return 1;
+    }
+    return 0;
 }
