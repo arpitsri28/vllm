@@ -5,13 +5,23 @@ constexpr int HEAD_DIM = 64;
 __global__ void ropeKernel(__nv_bfloat16 *input, int num_tokens, int proj_dim, int position_offset) {
   if (2 * threadIdx.x + 1 + blockIdx.x * proj_dim < num_tokens * proj_dim) {
     int position = position_offset + blockIdx.x;
-    int double_i = 2 * (threadIdx.x % 32);
-    float theta = 1.0/ powf(500000.0, ((float)double_i/HEAD_DIM));
+    int pair = threadIdx.x % (HEAD_DIM / 2);
+    int head = threadIdx.x / (HEAD_DIM / 2);
+    int x_index = blockIdx.x * proj_dim + head * HEAD_DIM + pair;
+    int y_index = x_index + HEAD_DIM / 2;
+    float theta = 1.0f / powf(500000.0f, (2.0f * pair) / HEAD_DIM);
+    float wavelength = 6.283185307179586f / theta;
+    if (wavelength > 8192.0f) {
+      theta /= 32.0f;
+    } else if (wavelength >= 2048.0f) {
+      float smooth = (8192.0f / wavelength - 1.0f) / 3.0f;
+      theta = (1.0f - smooth) * theta / 32.0f + smooth * theta;
+    }
     float angle = position * theta;
-    __nv_bfloat16 x_i = input[2 * threadIdx.x + blockIdx.x * proj_dim];
-    __nv_bfloat16 y_i = input[2 * threadIdx.x + 1 + blockIdx.x * proj_dim];
-    input[2 * threadIdx.x + blockIdx.x * proj_dim] = (__nv_bfloat16)((float) x_i * cosf(angle) - (float) y_i * sinf(angle));
-    input[2 * threadIdx.x + 1 + blockIdx.x * proj_dim] = (__nv_bfloat16)((float) x_i * sinf(angle) + (float) y_i * cosf(angle));
+    __nv_bfloat16 x_i = input[x_index];
+    __nv_bfloat16 y_i = input[y_index];
+    input[x_index] = (__nv_bfloat16)((float) x_i * cosf(angle) - (float) y_i * sinf(angle));
+    input[y_index] = (__nv_bfloat16)((float) x_i * sinf(angle) + (float) y_i * cosf(angle));
   }
 }
 

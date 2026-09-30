@@ -4,6 +4,9 @@
 #include "argmax.cuh"
 #include <cuda_runtime.h>
 #include <stdexcept>
+#include <cstdlib>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 constexpr int EMBEDDING_LENGTH = 2048;
 
@@ -53,6 +56,25 @@ std::vector<int> generate(cublasHandle_t cublas_handle, const ModelWeights& weig
     };
 
     try {
+        std::ofstream trace;
+        const char* trace_path = std::getenv("TINY_VLLM_LOGITS_TRACE");
+        if (trace_path != nullptr && *trace_path != '\0') {
+            trace.open(trace_path, std::ios::binary);
+            if (!trace) {
+                throw std::runtime_error("Failed to open logits trace");
+            }
+        }
+        auto trace_logits = [&]() {
+            if (!trace.is_open()) {
+                return;
+            }
+            std::vector<float> host_logits(VOCAB_SIZE);
+            check(cudaMemcpy(host_logits.data(), logits, VOCAB_SIZE * sizeof(float), cudaMemcpyDeviceToHost));
+            trace.write(reinterpret_cast<const char*>(host_logits.data()), VOCAB_SIZE * sizeof(float));
+            if (!trace) {
+                throw std::runtime_error("Failed to write logits trace");
+            }
+        };
         allocateKVCache(cache, max_seq_len);
         check(cudaMalloc(reinterpret_cast<void**>(&logits), VOCAB_SIZE * sizeof(float)));
         allocateTransformerBuffers(buffers, prompt_len, max_seq_len);
@@ -67,6 +89,7 @@ std::vector<int> generate(cublasHandle_t cublas_handle, const ModelWeights& weig
         int next_token = transformerForward(cublas_handle, prompt_hidden, weights, cache, buffers, logits, prompt_len);
         check(cudaGetLastError());
         generated_tokens.push_back(next_token);
+        trace_logits();
 
         while (generated_tokens.size() < static_cast<size_t>(max_new_tokens) &&
                next_token != 128001 && next_token != 128008 && next_token != 128009) {
@@ -76,6 +99,31 @@ std::vector<int> generate(cublasHandle_t cublas_handle, const ModelWeights& weig
             next_token = decodeForward(cublas_handle, decode_hidden, weights, cache, buffers, logits);
             check(cudaGetLastError());
             generated_tokens.push_back(next_token);
+            trace_logits();
+        }
+        if (trace.is_open()) {
+            trace.close();
+            if (!trace) {
+                throw std::runtime_error("Failed to close logits trace");
+            }
+        }
+        const char* dump_path = std::getenv("TINY_VLLM_LOGITS_DUMP");
+        if (dump_path != nullptr && *dump_path != '\0') {
+            std::vector<float> host_logits(VOCAB_SIZE);
+            check(cudaMemcpy(host_logits.data(), logits, VOCAB_SIZE * sizeof(float), cudaMemcpyDeviceToHost));
+            std::vector<int> prefix = prompt_tokens;
+            prefix.insert(prefix.end(), generated_tokens.begin(), generated_tokens.end() - 1);
+            nlohmann::json dump = {
+                {"prefix", prefix},
+                {"generated_tokens", generated_tokens},
+                {"logits", host_logits}
+            };
+            std::ofstream file(dump_path);
+            file << dump << '\n';
+            file.close();
+            if (!file) {
+                throw std::runtime_error("Failed to write logits dump");
+            }
         }
     } catch (...) {
         cleanup();
