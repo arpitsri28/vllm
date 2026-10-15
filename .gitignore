@@ -1,4 +1,63 @@
-models/
-loader
-validation_report_bf16.json
-validation_report.json
+# Local checkpoints and model assets
+/models/
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.ckpt
+*.onnx
+# Build products
+/build*/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+/Testing/
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+/loader
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.cache/
+# Credentials, machine configuration and editor state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+.aws/
+.runpod/
+.ssh/
+/runpod*.json
+/runpod*.yaml
+.codex/
+.agents/
+.DS_Store
+.vscode/
+.idea/
+# Profiler traces and transient runtime output
+*.log
+*.ncu-rep
+*.nsys-rep
+*.qdrep
+*.sqlite
+*.dump
+/core
+/core.*
+/prompt.json
+/generated_tokens.json
+/paged_*_report.json
+/validation_report*.json
+/benchmarks/local/
+# Selected JSON/JSONL evidence under benchmarks/results remains trackable.

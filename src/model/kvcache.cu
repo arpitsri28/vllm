@@ -1,3 +1,5 @@
+#include <cstddef>
+#include "operation_profile.cuh"
 #include "kvcache.cuh"
 #include <cuda_runtime.h>
 #include <stdexcept>
@@ -6,6 +8,8 @@ constexpr int NUM_LAYERS = 16;
 constexpr int KV_DIM = 512;
 
 void allocateKVCache(KVCache& cache, int max_seq_len) {
+    OP_SCOPE("kv_allocate",false);
+    operationAllocation(2);
   cache.max_seq_len = max_seq_len;
   cache.current_seq_len = 0;
 
@@ -21,6 +25,8 @@ void allocateKVCache(KVCache& cache, int max_seq_len) {
 }
 
 void freeKVCache(KVCache& cache) {
+    OP_SCOPE("kv_free",false);
+    operationFree(2);
   cudaFree(cache.k_cache);
   cudaFree(cache.v_cache);
 
@@ -32,6 +38,7 @@ void freeKVCache(KVCache& cache) {
 }
 
 void storeKV(KVCache& cache, int layer, const __nv_bfloat16* k, const __nv_bfloat16* v, int num_tokens) {
+    OP_SCOPE("kv_store",true);
   size_t offset = static_cast<size_t>(layer) * cache.max_seq_len * KV_DIM + static_cast<size_t>(cache.current_seq_len) * KV_DIM;
   size_t copy_size = static_cast<size_t>(num_tokens) * KV_DIM * sizeof(__nv_bfloat16);
   cudaError_t status = cudaMemcpy(cache.k_cache + offset, k, copy_size, cudaMemcpyDeviceToDevice);

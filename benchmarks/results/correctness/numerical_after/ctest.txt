@@ -1,0 +1,16 @@
+    Start 1: paged_kvcache
+1/6 Test #1: paged_kvcache ....................   Passed    0.80 sec
+    Start 3: paged_prefill
+2/6 Test #3: paged_prefill ....................   Passed    2.90 sec
+    Start 2: paged_attention
+3/6 Test #2: paged_attention ..................   Passed    0.68 sec
+    Start 4: paged_paged
+4/6 Test #4: paged_paged ......................   Passed   14.47 sec
+    Start 5: paged_batch
+5/6 Test #5: paged_batch ......................   Passed    3.21 sec
+    Start 6: bf16_argmax
+6/6 Test #6: bf16_argmax ......................   Passed    0.28 sec
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) =  22.41 sec

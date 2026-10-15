@@ -1,0 +1,1535 @@
+[
+  {
+    "actual_output_tokens": 128,
+    "batch": 1,
+    "method": "Full 128-output-token call after two warmups. CUDA events surround operations; host timers cover API submission/CPU work. Pending GPU intervals are completed at existing argmax dependency boundaries using an explicit profiler readiness wait. Intervals include queue idle/submission gaps and are not kernel-active time. Host wall and GPU intervals overlap and must not be summed. Profiling overhead makes total wall unsuitable for performance claims. Counts cover explicit source launches and cuBLAS API calls; physical cuBLAS kernel counts require external profiling.",
+    "mode": "contiguous",
+    "operations": {
+      "decode.attention_scores": {
+        "calls": 2032,
+        "cublas_calls": 65024,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 184.2503036633134,
+        "host_api_wall_ms": 335.76878499999935,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.buffer_free": {
+        "calls": 5,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 2.304273,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 5,
+        "tracked_copy_bytes": 0
+      },
+      "decode.cpu_greedy_scan": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 107.17240600000002,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.down_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 140.0574076846242,
+        "host_api_wall_ms": 22.684981,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.embedding": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 127,
+        "gpu_stream_elapsed_ms": 0.920671998988837,
+        "host_api_wall_ms": 0.9626689999999997,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.gate_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 129.9938566684723,
+        "host_api_wall_ms": 19.61090200000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.k_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 17.752159948460758,
+        "host_api_wall_ms": 17.29037900000001,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.kv_free": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.583228,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 2,
+        "tracked_copy_bytes": 0
+      },
+      "decode.kv_store": {
+        "calls": 2032,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 11.35155204217881,
+        "host_api_wall_ms": 20.49175099999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.lm_head": {
+        "calls": 127,
+        "cublas_calls": 127,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 118.61926412582397,
+        "host_api_wall_ms": 1.5625650000000002,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.logits_d2h": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 16.31443203985691,
+        "host_api_wall_ms": 16.729750000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 65154048
+      },
+      "decode.logits_host_allocation": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 4.130144999999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.o_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 42.863455917686224,
+        "host_api_wall_ms": 17.394771999999996,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.profiler_readiness_wait": {
+        "calls": 254,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 277.72596199999987,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.q_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 43.04223990812898,
+        "host_api_wall_ms": 18.04761300000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.residual": {
+        "calls": 4064,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4064,
+        "gpu_stream_elapsed_ms": 18.444384104572237,
+        "host_api_wall_ms": 21.54262000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.rmsnorm": {
+        "calls": 4191,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4191,
+        "gpu_stream_elapsed_ms": 28.5533760888502,
+        "host_api_wall_ms": 21.804508000000034,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.rope": {
+        "calls": 4064,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4064,
+        "gpu_stream_elapsed_ms": 19.263455803040415,
+        "host_api_wall_ms": 22.767363000000042,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.softmax": {
+        "calls": 2032,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 2032,
+        "gpu_stream_elapsed_ms": 14.151071947533637,
+        "host_api_wall_ms": 11.004679000000026,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.swiglu": {
+        "calls": 2032,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 2032,
+        "gpu_stream_elapsed_ms": 15.342176077421755,
+        "host_api_wall_ms": 10.655318999999986,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.up_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 129.82006335258484,
+        "host_api_wall_ms": 18.56817999999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.v_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 17.81542396172881,
+        "host_api_wall_ms": 17.08044299999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.weighted_v": {
+        "calls": 2032,
+        "cublas_calls": 65024,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 326.059327930212,
+        "host_api_wall_ms": 478.99939,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.workspace_free": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.906295,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 11,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.attention_scores": {
+        "calls": 16,
+        "cublas_calls": 512,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.862240009009838,
+        "host_api_wall_ms": 3.0201719999999996,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.cpu_greedy_scan": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.840047,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.down_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.540095992386341,
+        "host_api_wall_ms": 0.18014500000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.embedding": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 1,
+        "gpu_stream_elapsed_ms": 0.013439999893307686,
+        "host_api_wall_ms": 0.01504,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.gate_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.9398720040917397,
+        "host_api_wall_ms": 0.20112700000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.k_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.28614399768412113,
+        "host_api_wall_ms": 0.20529500000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.kv_store": {
+        "calls": 16,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.1032959995791316,
+        "host_api_wall_ms": 0.16640600000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.lm_head": {
+        "calls": 1,
+        "cublas_calls": 1,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.9411839842796326,
+        "host_api_wall_ms": 0.018863,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.logits_d2h": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.1767359972000122,
+        "host_api_wall_ms": 0.180953,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 513024
+      },
+      "prefill.logits_host_allocation": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.240084,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.o_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.47663999907672405,
+        "host_api_wall_ms": 0.13929100000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.profiler_readiness_wait": {
+        "calls": 2,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 7.678684,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.q_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.481216000393033,
+        "host_api_wall_ms": 0.15818,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.residual": {
+        "calls": 32,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 32,
+        "gpu_stream_elapsed_ms": 0.24390400107949972,
+        "host_api_wall_ms": 0.171873,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.rmsnorm": {
+        "calls": 33,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 33,
+        "gpu_stream_elapsed_ms": 0.49139200057834387,
+        "host_api_wall_ms": 0.17614700000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.rope": {
+        "calls": 32,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 32,
+        "gpu_stream_elapsed_ms": 0.25299199810251594,
+        "host_api_wall_ms": 0.170647,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.softmax": {
+        "calls": 16,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 16,
+        "gpu_stream_elapsed_ms": 1.4183679968118668,
+        "host_api_wall_ms": 0.089022,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.swiglu": {
+        "calls": 16,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 16,
+        "gpu_stream_elapsed_ms": 0.4435839969664812,
+        "host_api_wall_ms": 0.084811,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.up_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.9407360032200813,
+        "host_api_wall_ms": 0.17944900000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.v_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.2647999972105026,
+        "host_api_wall_ms": 0.18995199999999995,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.weighted_v": {
+        "calls": 16,
+        "cublas_calls": 512,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 2.4264319837093353,
+        "host_api_wall_ms": 2.980038,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.buffer_allocate": {
+        "calls": 5,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.118016,
+        "observed_allocation_calls": 5,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.kv_allocate": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.33666,
+        "observed_allocation_calls": 2,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.workspace_allocate": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.632358,
+        "observed_allocation_calls": 11,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      }
+    },
+    "prompt": 256,
+    "tokens_unchanged": true,
+    "wall_ms_with_operation_probes": 1504.207329
+  },
+  {
+    "actual_output_tokens": 128,
+    "batch": 1,
+    "method": "Full 128-output-token call after two warmups. CUDA events surround operations; host timers cover API submission/CPU work. Pending GPU intervals are completed at existing argmax dependency boundaries using an explicit profiler readiness wait. Intervals include queue idle/submission gaps and are not kernel-active time. Host wall and GPU intervals overlap and must not be summed. Profiling overhead makes total wall unsuitable for performance claims. Counts cover explicit source launches and cuBLAS API calls; physical cuBLAS kernel counts require external profiling.",
+    "mode": "batch",
+    "operations": {
+      "decode.attention_scores": {
+        "calls": 2032,
+        "cublas_calls": 65024,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 173.55811306089163,
+        "host_api_wall_ms": 293.34740299999993,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.buffer_free": {
+        "calls": 3,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.09061999999999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 3,
+        "tracked_copy_bytes": 0
+      },
+      "decode.cpu_greedy_scan": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 88.43427999999996,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.down_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 140.20361586660147,
+        "host_api_wall_ms": 19.609678999999982,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.embedding": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 127,
+        "gpu_stream_elapsed_ms": 0.9738559992983937,
+        "host_api_wall_ms": 1.0222949999999997,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.gate_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 131.67664004862309,
+        "host_api_wall_ms": 17.108648000000013,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.k_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 17.80329604446888,
+        "host_api_wall_ms": 15.127077000000012,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.kv_free": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.706809,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 2,
+        "tracked_copy_bytes": 0
+      },
+      "decode.kv_gather": {
+        "calls": 4064,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4064,
+        "gpu_stream_elapsed_ms": 19.46476810844615,
+        "host_api_wall_ms": 20.132534999999958,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.kv_store": {
+        "calls": 2032,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 2032,
+        "gpu_stream_elapsed_ms": 9.051999981049448,
+        "host_api_wall_ms": 12.992048000000002,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.lm_head": {
+        "calls": 127,
+        "cublas_calls": 127,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 118.64051181077957,
+        "host_api_wall_ms": 1.4732300000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.logits_d2h": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 15.758080013096333,
+        "host_api_wall_ms": 16.187851,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 65154048
+      },
+      "decode.logits_host_allocation": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 4.371608999999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.metadata_allocate_upload": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 2.656858,
+        "observed_allocation_calls": 508,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.metadata_free": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 1.8806219999999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 508,
+        "tracked_copy_bytes": 0
+      },
+      "decode.o_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 42.696191949769855,
+        "host_api_wall_ms": 15.15414,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.profiler_readiness_wait": {
+        "calls": 254,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 592.8202030000001,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.q_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 43.2698879558593,
+        "host_api_wall_ms": 15.991917000000011,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.residual": {
+        "calls": 4064,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4064,
+        "gpu_stream_elapsed_ms": 18.381600122898817,
+        "host_api_wall_ms": 19.245454999999918,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.rmsnorm": {
+        "calls": 4191,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4191,
+        "gpu_stream_elapsed_ms": 28.935552002396435,
+        "host_api_wall_ms": 19.63674200000001,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.rope": {
+        "calls": 4064,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4064,
+        "gpu_stream_elapsed_ms": 19.415039817336947,
+        "host_api_wall_ms": 21.08430899999996,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.softmax": {
+        "calls": 65024,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 65024,
+        "gpu_stream_elapsed_ms": 404.0357762752101,
+        "host_api_wall_ms": 334.5579929999992,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.swiglu": {
+        "calls": 2032,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 2032,
+        "gpu_stream_elapsed_ms": 15.446432035416365,
+        "host_api_wall_ms": 9.522372999999996,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.up_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 129.8887353464961,
+        "host_api_wall_ms": 16.145163000000014,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.v_projection": {
+        "calls": 2032,
+        "cublas_calls": 2032,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 17.849440026097,
+        "host_api_wall_ms": 15.008051000000009,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.weighted_v": {
+        "calls": 2032,
+        "cublas_calls": 65024,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 249.5457593947649,
+        "host_api_wall_ms": 353.4481519999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.workspace_free": {
+        "calls": 2,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.6858839999999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 22,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.attention_scores": {
+        "calls": 16,
+        "cublas_calls": 512,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.7602239847183228,
+        "host_api_wall_ms": 2.54423,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.cpu_greedy_scan": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.695215,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.down_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.2455680146813393,
+        "host_api_wall_ms": 0.119782,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.embedding": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 1,
+        "gpu_stream_elapsed_ms": 0.011648000217974186,
+        "host_api_wall_ms": 0.013371,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.gate_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.2665920108556747,
+        "host_api_wall_ms": 0.141403,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.k_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.3008959982544184,
+        "host_api_wall_ms": 0.21325900000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.kv_store": {
+        "calls": 16,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.4802559968084097,
+        "host_api_wall_ms": 0.7503909999999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.lm_head": {
+        "calls": 1,
+        "cublas_calls": 1,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.9390720129013062,
+        "host_api_wall_ms": 0.016753,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.logits_d2h": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.13206399977207184,
+        "host_api_wall_ms": 0.138263,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 513024
+      },
+      "prefill.logits_host_allocation": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.221295,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.o_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.400736004114151,
+        "host_api_wall_ms": 0.12041,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.profiler_readiness_wait": {
+        "calls": 2,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 4.707958,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.q_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.4005119986832142,
+        "host_api_wall_ms": 0.14174799999999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.residual": {
+        "calls": 32,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 32,
+        "gpu_stream_elapsed_ms": 0.1942400000989437,
+        "host_api_wall_ms": 0.15010599999999996,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.rmsnorm": {
+        "calls": 33,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 33,
+        "gpu_stream_elapsed_ms": 0.34012800082564354,
+        "host_api_wall_ms": 0.15718700000000002,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.rope": {
+        "calls": 32,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 32,
+        "gpu_stream_elapsed_ms": 0.19027199875563383,
+        "host_api_wall_ms": 0.15008100000000002,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.softmax": {
+        "calls": 16,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 16,
+        "gpu_stream_elapsed_ms": 0.3731199987232685,
+        "host_api_wall_ms": 0.08002000000000001,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.swiglu": {
+        "calls": 16,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 16,
+        "gpu_stream_elapsed_ms": 0.20607999991625547,
+        "host_api_wall_ms": 0.076338,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.up_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.2604799941182137,
+        "host_api_wall_ms": 0.13393700000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.v_projection": {
+        "calls": 16,
+        "cublas_calls": 16,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.28835199400782585,
+        "host_api_wall_ms": 0.17448599999999997,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.weighted_v": {
+        "calls": 16,
+        "cublas_calls": 512,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.916800007224083,
+        "host_api_wall_ms": 2.5272000000000006,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.buffer_allocate": {
+        "calls": 3,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.0070880000000000006,
+        "observed_allocation_calls": 3,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.kv_allocate": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.29876,
+        "observed_allocation_calls": 2,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.workspace_allocate": {
+        "calls": 2,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.403776,
+        "observed_allocation_calls": 22,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      }
+    },
+    "prompt": 128,
+    "tokens_unchanged": true,
+    "wall_ms_with_operation_probes": 1966.953523
+  },
+  {
+    "actual_output_tokens": 512,
+    "batch": 4,
+    "method": "Full 128-output-token call after two warmups. CUDA events surround operations; host timers cover API submission/CPU work. Pending GPU intervals are completed at existing argmax dependency boundaries using an explicit profiler readiness wait. Intervals include queue idle/submission gaps and are not kernel-active time. Host wall and GPU intervals overlap and must not be summed. Profiling overhead makes total wall unsuitable for performance claims. Counts cover explicit source launches and cuBLAS API calls; physical cuBLAS kernel counts require external profiling.",
+    "mode": "batch",
+    "operations": {
+      "decode.attention_scores": {
+        "calls": 8128,
+        "cublas_calls": 260096,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 696.3493810892105,
+        "host_api_wall_ms": 1442.407925000002,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.buffer_free": {
+        "calls": 3,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.203382,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 3,
+        "tracked_copy_bytes": 0
+      },
+      "decode.cpu_greedy_scan": {
+        "calls": 508,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 362.5304540000001,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.down_projection": {
+        "calls": 8128,
+        "cublas_calls": 8128,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 559.2066545262933,
+        "host_api_wall_ms": 78.73028099999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.embedding": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 127,
+        "gpu_stream_elapsed_ms": 1.4361279993318021,
+        "host_api_wall_ms": 1.6383719999999997,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.gate_projection": {
+        "calls": 8128,
+        "cublas_calls": 8128,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 525.0536304712296,
+        "host_api_wall_ms": 68.55581900000018,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.k_projection": {
+        "calls": 8128,
+        "cublas_calls": 8128,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 60.34819222940132,
+        "host_api_wall_ms": 61.831525999999755,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.kv_free": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 1.897614,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 2,
+        "tracked_copy_bytes": 0
+      },
+      "decode.kv_gather": {
+        "calls": 4064,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4064,
+        "gpu_stream_elapsed_ms": 27.461023963056505,
+        "host_api_wall_ms": 25.017814000000037,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.kv_store": {
+        "calls": 2032,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 2032,
+        "gpu_stream_elapsed_ms": 8.935583955142647,
+        "host_api_wall_ms": 10.08699499999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.lm_head": {
+        "calls": 508,
+        "cublas_calls": 508,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 474.55545580387115,
+        "host_api_wall_ms": 5.345207,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.logits_d2h": {
+        "calls": 508,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 88.45011201500893,
+        "host_api_wall_ms": 89.69675900000006,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 260616192
+      },
+      "decode.logits_host_allocation": {
+        "calls": 508,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 9.172241999999994,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.metadata_allocate_upload": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 92.90776900000004,
+        "observed_allocation_calls": 508,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.metadata_free": {
+        "calls": 127,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 162.31832499999985,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 508,
+        "tracked_copy_bytes": 0
+      },
+      "decode.o_projection": {
+        "calls": 8128,
+        "cublas_calls": 8128,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 171.53830388747156,
+        "host_api_wall_ms": 61.77476500000011,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.profiler_readiness_wait": {
+        "calls": 635,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 998.9136929999997,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.q_projection": {
+        "calls": 8128,
+        "cublas_calls": 8128,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 172.61494376696646,
+        "host_api_wall_ms": 63.95102600000022,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.residual": {
+        "calls": 4064,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4064,
+        "gpu_stream_elapsed_ms": 18.613952092826366,
+        "host_api_wall_ms": 20.216720999999975,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.rmsnorm": {
+        "calls": 4191,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4191,
+        "gpu_stream_elapsed_ms": 30.14102395903319,
+        "host_api_wall_ms": 21.290990999999988,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.rope": {
+        "calls": 4064,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4064,
+        "gpu_stream_elapsed_ms": 19.002111808862537,
+        "host_api_wall_ms": 20.09762300000005,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.softmax": {
+        "calls": 260096,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 260096,
+        "gpu_stream_elapsed_ms": 1616.2218899633735,
+        "host_api_wall_ms": 2240.3833750000463,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.swiglu": {
+        "calls": 2032,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 2032,
+        "gpu_stream_elapsed_ms": 16.14896000782028,
+        "host_api_wall_ms": 9.991604000000006,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.up_projection": {
+        "calls": 8128,
+        "cublas_calls": 8128,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 517.9555492028594,
+        "host_api_wall_ms": 65.96432700000008,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.v_projection": {
+        "calls": 8128,
+        "cublas_calls": 8128,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 60.35299218771979,
+        "host_api_wall_ms": 60.88054500000013,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.weighted_v": {
+        "calls": 8128,
+        "cublas_calls": 260096,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 999.310522980988,
+        "host_api_wall_ms": 1438.4697039999965,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "decode.workspace_free": {
+        "calls": 2,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 1.883971,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 22,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.attention_scores": {
+        "calls": 64,
+        "cublas_calls": 2048,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 6.967071980237961,
+        "host_api_wall_ms": 10.256106999999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.cpu_greedy_scan": {
+        "calls": 4,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 2.797863,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.down_projection": {
+        "calls": 64,
+        "cublas_calls": 64,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 4.964896000921726,
+        "host_api_wall_ms": 0.48639699999999997,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.embedding": {
+        "calls": 4,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 4,
+        "gpu_stream_elapsed_ms": 0.04195200093090534,
+        "host_api_wall_ms": 0.042567,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.gate_projection": {
+        "calls": 64,
+        "cublas_calls": 64,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 5.064256004989147,
+        "host_api_wall_ms": 0.5421450000000001,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.k_projection": {
+        "calls": 64,
+        "cublas_calls": 64,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.203519992530346,
+        "host_api_wall_ms": 0.7930790000000001,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.kv_store": {
+        "calls": 64,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.9151680022478104,
+        "host_api_wall_ms": 3.039008999999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.lm_head": {
+        "calls": 4,
+        "cublas_calls": 4,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 3.7520320415496826,
+        "host_api_wall_ms": 0.064214,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.logits_d2h": {
+        "calls": 4,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.6565440148115158,
+        "host_api_wall_ms": 0.670353,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 2052096
+      },
+      "prefill.logits_host_allocation": {
+        "calls": 4,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 0.265515,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.o_projection": {
+        "calls": 64,
+        "cublas_calls": 64,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.5973759964108467,
+        "host_api_wall_ms": 0.484321,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.profiler_readiness_wait": {
+        "calls": 8,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 18.669491000000004,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.q_projection": {
+        "calls": 64,
+        "cublas_calls": 64,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.5617599971592426,
+        "host_api_wall_ms": 0.5304890000000001,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.residual": {
+        "calls": 128,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 128,
+        "gpu_stream_elapsed_ms": 0.7956479992717505,
+        "host_api_wall_ms": 0.6063169999999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.rmsnorm": {
+        "calls": 132,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 132,
+        "gpu_stream_elapsed_ms": 1.3625280018895864,
+        "host_api_wall_ms": 0.6134600000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.rope": {
+        "calls": 128,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 128,
+        "gpu_stream_elapsed_ms": 0.7628159997984767,
+        "host_api_wall_ms": 0.6105549999999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.softmax": {
+        "calls": 64,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 64,
+        "gpu_stream_elapsed_ms": 1.487616004422307,
+        "host_api_wall_ms": 0.3200589999999999,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.swiglu": {
+        "calls": 64,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 64,
+        "gpu_stream_elapsed_ms": 0.8262080000713468,
+        "host_api_wall_ms": 0.30270700000000006,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.up_projection": {
+        "calls": 64,
+        "cublas_calls": 64,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 5.048864029347897,
+        "host_api_wall_ms": 0.5132849999999998,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.v_projection": {
+        "calls": 64,
+        "cublas_calls": 64,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 1.1595839969813824,
+        "host_api_wall_ms": 0.7064720000000003,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "prefill.weighted_v": {
+        "calls": 64,
+        "cublas_calls": 2048,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 7.670432046055794,
+        "host_api_wall_ms": 10.183969,
+        "observed_allocation_calls": 0,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.buffer_allocate": {
+        "calls": 3,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 1.277119,
+        "observed_allocation_calls": 3,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.kv_allocate": {
+        "calls": 1,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 2.015087,
+        "observed_allocation_calls": 2,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      },
+      "setup.workspace_allocate": {
+        "calls": 2,
+        "cublas_calls": 0,
+        "explicit_kernel_launches": 0,
+        "gpu_stream_elapsed_ms": 0.0,
+        "host_api_wall_ms": 5.261548,
+        "observed_allocation_calls": 22,
+        "observed_free_calls": 0,
+        "tracked_copy_bytes": 0
+      }
+    },
+    "prompt": 128,
+    "tokens_unchanged": true,
+    "wall_ms_with_operation_probes": 7642.467
+  }
+]

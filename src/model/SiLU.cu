@@ -1,3 +1,5 @@
+#include <cstddef>
+#include "operation_profile.cuh"
 #include "../../include/silu.cuh"
 
 __global__ void siluKernel(__nv_bfloat16 *a, __nv_bfloat16 *b) {
@@ -8,5 +10,7 @@ __global__ void siluKernel(__nv_bfloat16 *a, __nv_bfloat16 *b) {
 }
 
 void silu(__nv_bfloat16 *a, __nv_bfloat16 *b, int num_tokens) {
+    OP_SCOPE("swiglu",true);
+    operationKernel();
     siluKernel<<<num_tokens, 1024>>>(a, b);
 }

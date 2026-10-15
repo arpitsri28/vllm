@@ -1,0 +1,91 @@
+[
+  {
+    "request_id": 0,
+    "text": "The capital of France is",
+    "prompt_tokens": [
+      128000,
+      791,
+      6864,
+      315,
+      9822,
+      374
+    ],
+    "max_new_tokens": 3
+  },
+  {
+    "request_id": 1,
+    "text": "Two plus two equals",
+    "prompt_tokens": [
+      128000,
+      11874,
+      5636,
+      1403,
+      17239
+    ],
+    "max_new_tokens": 7
+  },
+  {
+    "request_id": 2,
+    "text": "def fibonacci(n):\n",
+    "prompt_tokens": [
+      128000,
+      755,
+      76798,
+      1471,
+      997
+    ],
+    "max_new_tokens": 11
+  },
+  {
+    "request_id": 3,
+    "text": "Once upon a time, a small robot discovered a garden.",
+    "prompt_tokens": [
+      128000,
+      12805,
+      5304,
+      264,
+      892,
+      11,
+      264,
+      2678,
+      12585,
+      11352,
+      264,
+      13863,
+      13
+    ],
+    "max_new_tokens": 5
+  },
+  {
+    "request_id": 4,
+    "text": "Explain why the sky looks blue.",
+    "prompt_tokens": [
+      128000,
+      849,
+      21435,
+      3249,
+      279,
+      13180,
+      5992,
+      6437,
+      13
+    ],
+    "max_new_tokens": 9
+  },
+  {
+    "request_id": 5,
+    "text": "The largest planet in our solar system is",
+    "prompt_tokens": [
+      128000,
+      791,
+      7928,
+      11841,
+      304,
+      1057,
+      13238,
+      1887,
+      374
+    ],
+    "max_new_tokens": 4
+  }
+]

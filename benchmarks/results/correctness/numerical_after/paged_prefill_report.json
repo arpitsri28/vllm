@@ -1,0 +1,82 @@
+{
+  "cases": [
+    {
+      "block_table": [
+        0
+      ],
+      "kv_bitwise_equal": true,
+      "logits_bitwise_equal": true,
+      "paged_token": 16309,
+      "prompt_length": 1,
+      "token": 16309
+    },
+    {
+      "block_table": [
+        0
+      ],
+      "kv_bitwise_equal": true,
+      "logits_bitwise_equal": true,
+      "paged_token": 374,
+      "prompt_length": 15,
+      "token": 374
+    },
+    {
+      "block_table": [
+        0
+      ],
+      "kv_bitwise_equal": true,
+      "logits_bitwise_equal": true,
+      "paged_token": 60704,
+      "prompt_length": 16,
+      "token": 60704
+    },
+    {
+      "block_table": [
+        0,
+        2
+      ],
+      "kv_bitwise_equal": true,
+      "logits_bitwise_equal": true,
+      "paged_token": 6864,
+      "prompt_length": 17,
+      "token": 6864
+    },
+    {
+      "block_table": [
+        0,
+        2
+      ],
+      "kv_bitwise_equal": true,
+      "logits_bitwise_equal": true,
+      "paged_token": 791,
+      "prompt_length": 31,
+      "token": 791
+    },
+    {
+      "block_table": [
+        0,
+        2
+      ],
+      "kv_bitwise_equal": true,
+      "logits_bitwise_equal": true,
+      "paged_token": 6864,
+      "prompt_length": 32,
+      "token": 6864
+    },
+    {
+      "block_table": [
+        0,
+        2,
+        3
+      ],
+      "kv_bitwise_equal": true,
+      "logits_bitwise_equal": true,
+      "paged_token": 315,
+      "prompt_length": 33,
+      "token": 315
+    }
+  ],
+  "cuda_runtime_error": null,
+  "passed": true,
+  "stage": "prefill"
+}

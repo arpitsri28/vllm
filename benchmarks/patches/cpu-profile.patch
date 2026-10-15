@@ -1,0 +1,377 @@
+--- a/benchmarks/benchmark.cu
++++ /dev/null
+@@ -1,182 +0,0 @@
+-// Reuse the existing loader exactly as the repository's inference tests do.
+-#define main tinyVllmCliForBenchmark
+-#include "../src/main.cu"
+-#undef main
+-#include "benchmark_trace.cuh"
+-#include <sstream>
+-#include <iomanip>
+-
+-static json execute(cublasHandle_t handle, const ModelWeights& weights,
+-                    const std::vector<int>& prompt, int output, int batch,
+-                    const std::string& mode, bool instrument, size_t model_used,
+-                    int max_seq_len) {
+-    BenchmarkTrace trace;
+-    benchmarkCheck(cudaDeviceSynchronize());
+-    trace.start = BenchmarkClock::now();
+-    activeBenchmarkTrace = instrument ? &trace : nullptr;
+-    std::vector<std::vector<int>> generated;
+-    try {
+-        if (mode == "batch") {
+-            std::vector<Request> requests(batch);
+-            for (int i = 0; i < batch; ++i) {
+-                requests[i].request_id = i;
+-                requests[i].prompt_tokens = prompt;
+-                requests[i].max_new_tokens = output;
+-            }
+-            generateContinuous(handle, weights, requests, batch, max_seq_len);
+-            for (const auto& r : requests) generated.push_back(r.generated_tokens);
+-        } else {
+-            generated.push_back(mode == "paged"
+-                ? generatePaged(handle, weights, prompt, output, max_seq_len)
+-                : generate(handle, weights, prompt, output, max_seq_len));
+-        }
+-        benchmarkCheck(cudaGetLastError());
+-        benchmarkCheck(cudaDeviceSynchronize());
+-    } catch (...) {
+-        activeBenchmarkTrace = nullptr;
+-        throw;
+-    }
+-    double e2e = benchmarkMs(trace.start);
+-    activeBenchmarkTrace = nullptr;
+-    int actual = 0, completed = 0;
+-    for (const auto& tokens : generated) {
+-        actual += static_cast<int>(tokens.size());
+-        completed += tokens.size() == static_cast<size_t>(output);
+-    }
+-    json r = {{"status", completed == batch ? "ok" : "early_termination"},
+-        {"actual_output_tokens", actual}, {"completed_requests", completed},
+-        {"failed_or_incomplete_requests", batch - completed},
+-        {"generated_tokens", generated}, {"e2e_wall_ms", e2e},
+-        {"e2e_output_tokens_per_s", actual * 1000.0 / e2e},
+-        {"model_loaded_device_used_mib", model_used / 1048576.0}};
+-    if (!instrument) return r;
+-    r["prefill_gpu_stream_ms"] = trace.prefill_gpu_stream_ms;
+-    r["decode_gpu_stream_ms"] = trace.decode_gpu_stream_ms;
+-    r["prefill_wall_ms"] = trace.prefill_wall_ms;
+-    r["prefill_observed_peak_device_used_mib"] = trace.prefill_used / 1048576.0;
+-    r["decode_observed_peak_device_used_mib"] = trace.decode_used / 1048576.0;
+-    r["observed_peak_device_used_mib"] = std::max({model_used, trace.prefill_used, trace.decode_used}) / 1048576.0;
+-    r["token_timestamps_wall_ms"] = json::object();
+-    std::vector<double> ttfts, itls;
+-    for (const auto& [id, times] : trace.token_ms) {
+-        r["token_timestamps_wall_ms"][std::to_string(id)] = times;
+-        if (!times.empty()) ttfts.push_back(times.front());
+-        for (size_t i = 1; i < times.size(); ++i) itls.push_back(times[i] - times[i-1]);
+-    }
+-    auto mean = [](const std::vector<double>& v) {
+-        double s = 0; for (double x : v) s += x; return v.empty() ? 0.0 : s / v.size();
+-    };
+-    auto p95 = [](std::vector<double> v) {
+-        if (v.empty()) return 0.0;
+-        std::sort(v.begin(), v.end());
+-        return v[static_cast<size_t>(std::ceil(0.95 * v.size())) - 1];
+-    };
+-    r["mean_ttft_wall_ms"] = mean(ttfts);
+-    r["p95_ttft_wall_ms"] = p95(ttfts);
+-    r["mean_itl_wall_ms"] = mean(itls);
+-    r["p95_itl_wall_ms"] = p95(itls);
+-    if (mode != "batch" && !trace.token_ms[0].empty()) {
+-        const auto& t = trace.token_ms[0];
+-        double decode = t.back() - t.front();
+-        r["ttft_wall_ms"] = t.front();
+-        r["decode_wall_ms"] = decode;
+-        r["decode_output_tokens"] = static_cast<int>(t.size()) - 1;
+-        r["decode_wall_tokens_per_s"] = decode > 0 ? (t.size()-1) * 1000.0 / decode : 0.0;
+-        r["decode_gpu_stream_tokens_per_s"] = trace.decode_gpu_stream_ms > 0 ? (t.size()-1) * 1000.0 / trace.decode_gpu_stream_ms : 0.0;
+-    }
+-    return r;
+-}
+-
+-int main(int argc, char** argv) {
+-    char* gpu = nullptr;
+-    cublasHandle_t handle = nullptr;
+-    try {
+-        if (argc != 4) throw std::invalid_argument("Usage: inference_benchmark MODEL CONFIG.json OUTPUT.jsonl");
+-        std::ifstream config_file(argv[2]); json config; config_file >> config;
+-        std::ifstream prompts_file(config.at("prompts_file").get<std::string>()); json prompts; prompts_file >> prompts;
+-        std::ofstream results(argv[3]);
+-        if (!results) throw std::runtime_error("Cannot open results file");
+-        unsetenv("TINY_VLLM_LOGITS_TRACE"); unsetenv("TINY_VLLM_LOGITS_DUMP");
+-        cudaDeviceProp prop{}; benchmarkCheck(cudaGetDeviceProperties(&prop, 0));
+-        int driver, runtime; benchmarkCheck(cudaDriverGetVersion(&driver)); benchmarkCheck(cudaRuntimeGetVersion(&runtime));
+-        // Avoid loader chatter without changing the production loader.
+-        std::ostringstream quiet; auto* original = std::cout.rdbuf(quiet.rdbuf());
+-        SafeTensorModel loaded;
+-        try { loaded = loadSafeTensors(argv[1]); } catch (...) { std::cout.rdbuf(original); throw; }
+-        std::cout.rdbuf(original);
+-        if (loaded.tensor_data.empty()) throw std::runtime_error("Empty model");
+-        // Verify BF16 and the hard-coded model shape before interpreting tensor bytes.
+-        for (const auto& item : loaded.header.items()) {
+-            if (item.key() != "__metadata__" && item.value().at("dtype") != "BF16")
+-                throw std::runtime_error("Expected BF16 checkpoint");
+-        }
+-        if (loaded.header.at("model.embed_tokens.weight").at("shape") != json::array({128256,2048}))
+-            throw std::runtime_error("Unsupported embedding shape");
+-        gpu = copyModelToGPU(loaded);
+-        auto weights = mapWeights(loaded, gpu);
+-        if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) throw std::runtime_error("cuBLAS initialization failed");
+-        benchmarkCheck(cudaDeviceSynchronize());
+-        size_t free, total; benchmarkCheck(cudaMemGetInfo(&free, &total));
+-        size_t model_used = total-free;
+-        json metadata = {{"type", "metadata"}, {"gpu", prop.name}, {"vram_mib", prop.totalGlobalMem / 1048576.0},
+-            {"cuda_runtime", runtime}, {"cuda_driver", driver}, {"precision", "BF16"},
+-            {"model_tensor_bytes", loaded.tensor_data.size()}, {"config", config},
+-            {"build", "Release; CUDA architecture 86; no fast-math"},
+-            {"model_loaded_device_used_mib", model_used / 1048576.0}};
+-        results << metadata.dump() << '\n'; results.flush();
+-        loaded.tensor_data.clear(); loaded.tensor_data.shrink_to_fit();
+-        int errors = 0;
+-        for (const auto& c : config.at("cases")) {
+-            int length = c.at("prompt_tokens").get<int>(), output = c.at("output_tokens").get<int>(), batch = c.value("batch_size", 1);
+-            std::string mode = c.at("mode").get<std::string>();
+-            json base = c;
+-            if ((mode == "batch" && batch > MAX_BATCH_SIZE) || c.contains("skip_reason")) {
+-                base["type"] = "unsupported"; base["status"] = "unsupported";
+-                base["reason"] = c.value("skip_reason", "Scheduler and paged kernels support at most 4 active requests");
+-                results << base.dump() << '\n'; results.flush(); continue;
+-            }
+-            if (mode != "batch" && mode != "paged" && mode != "contiguous") throw std::invalid_argument("Unknown mode");
+-            auto prompt = prompts.at(std::to_string(length)).get<std::vector<int>>();
+-            if (prompt.size() != static_cast<size_t>(length)) throw std::runtime_error("Wrong prompt length");
+-            std::cout << "Running " << mode << " P=" << length << " O=" << output << " B=" << batch << std::endl;
+-            bool healthy = true;
+-            try {
+-                auto plain = execute(handle, weights, prompt, output, batch, mode, false, model_used, config.at("max_seq_len").get<int>());
+-                auto observed = execute(handle, weights, prompt, output, batch, mode, true, model_used, config.at("max_seq_len").get<int>());
+-                if (plain.at("generated_tokens") != observed.at("generated_tokens")) throw std::runtime_error("Instrumentation changes generated tokens");
+-                base["type"] = "instrumentation_check";
+-                base["plain_e2e_wall_ms"] = plain.at("e2e_wall_ms");
+-                base["observed_e2e_wall_ms"] = observed.at("e2e_wall_ms");
+-                base["tokens_equal"] = true;
+-                results << base.dump() << '\n'; results.flush();
+-                for (int i = 0; i < config.at("warmups").get<int>(); ++i)
+-                    execute(handle, weights, prompt, output, batch, mode, true, model_used, config.at("max_seq_len").get<int>());
+-            } catch (const std::exception& e) {
+-                base["type"] = "error"; base["status"] = "error"; base["error"] = e.what();
+-                results << base.dump() << '\n'; results.flush(); ++errors; healthy = false;
+-            }
+-            if (!healthy) continue;
+-            for (int rep = 0; rep < config.at("repetitions").get<int>(); ++rep) {
+-                json row = c; row["type"] = "run"; row["repetition"] = rep;
+-                try {
+-                    auto observed = execute(handle, weights, prompt, output, batch, mode, true, model_used, config.at("max_seq_len").get<int>());
+-                    auto plain = execute(handle, weights, prompt, output, batch, mode, false, model_used, config.at("max_seq_len").get<int>());
+-                    if (plain.at("generated_tokens") != observed.at("generated_tokens")) throw std::runtime_error("Measured instrumentation changes tokens");
+-                    row.update(observed);
+-                    row["uninstrumented_e2e_wall_ms"] = plain.at("e2e_wall_ms");
+-                    row["uninstrumented_output_tokens_per_s"] = plain.at("e2e_output_tokens_per_s");
+-                }
+-                catch (const std::exception& e) { row["status"] = "error"; row["error"] = e.what(); ++errors; }
+-                results << row.dump() << '\n'; results.flush();
+-                std::cout << "  repetition " << rep << ": " << row.at("status") << std::endl;
+-                if (row.at("status") == "error") break;
+-            }
+-        }
+-        cublasDestroy(handle); handle = nullptr; benchmarkCheck(cudaFree(gpu)); gpu = nullptr;
+-        return errors ? 2 : 0;
+-    } catch (const std::exception& e) {
+-        activeBenchmarkTrace = nullptr;
+-        if (handle) cublasDestroy(handle);
+-        cudaFree(gpu); std::cerr << e.what() << '\n'; return 1;
+-    }
+-}
+--- a/src/model/argmax.cu
++++ b/src/model/argmax.cu
+@@ -3,103 +3,32 @@
+ #include "benchmark_trace.cuh"
+ #include "argmax.cuh"
+ #include <cuda_runtime.h>
+-#include <math_constants.h>
+ #include <cuda_bf16.h>
+-#include <map>
++#include <vector>
++#include <iostream>
+ #include <stdexcept>
+-
+-namespace {
+-constexpr int ARGMAX_THREADS = 256;
+-constexpr int ARGMAX_BLOCKS = 128;
+-struct Candidate { float value; int index; };
+-
+-__device__ Candidate better(Candidate a, Candidate b) {
+-    return b.value > a.value || (b.value == a.value && b.index < a.index) ? b : a;
+-}
+-
+-__global__ void argmaxPartials(const float* logits, Candidate* partials) {
+-    Candidate best{-CUDART_INF_F, VOCAB_SIZE};
+-    for (int index = blockIdx.x * blockDim.x + threadIdx.x; index < VOCAB_SIZE;
+-         index += blockDim.x * gridDim.x) {
+-        float value = __bfloat162float(__float2bfloat16_rn(logits[index]));
+-        // The original CPU scan ignores NaNs except when token zero is NaN.
+-        if (!isnan(value)) best = better(best, {value, index});
+-    }
+-    __shared__ Candidate values[ARGMAX_THREADS];
+-    values[threadIdx.x] = best;
+-    __syncthreads();
+-    for (int stride = ARGMAX_THREADS / 2; stride; stride /= 2) {
+-        if (threadIdx.x < stride) values[threadIdx.x] = better(values[threadIdx.x], values[threadIdx.x + stride]);
+-        __syncthreads();
+-    }
+-    if (threadIdx.x == 0) partials[blockIdx.x] = values[0];
+-}
+-
+-__global__ void argmaxFinish(const float* logits, const Candidate* partials, int* selected) {
+-    __shared__ Candidate values[ARGMAX_THREADS];
+-    values[threadIdx.x] = threadIdx.x < ARGMAX_BLOCKS ? partials[threadIdx.x] : Candidate{-CUDART_INF_F, VOCAB_SIZE};
+-    __syncthreads();
+-    for (int stride = ARGMAX_THREADS / 2; stride; stride /= 2) {
+-        if (threadIdx.x < stride) values[threadIdx.x] = better(values[threadIdx.x], values[threadIdx.x + stride]);
+-        __syncthreads();
+-    }
+-    if (threadIdx.x == 0) {
+-        // CPU initializes its running maximum from token zero. If that is NaN,
+-        // every subsequent strict greater-than comparison is false: return zero.
+-        selected[0] = isnan(__bfloat162float(__float2bfloat16_rn(logits[0]))) ? 0 : values[0].index;
+-    }
+-}
+-
+-struct Workspace {
+-    Candidate* partials = nullptr;
+-    int device = -1;
+-    ~Workspace() {
+-        if (!partials) return;
+-        int current = device;
+-        cudaGetDevice(&current);
+-        if (current != device) cudaSetDevice(device);
+-        cudaFree(partials);
+-        if (current != device) cudaSetDevice(current);
+-    }
+-};
+-
+-Workspace& workspace() {
+-    // One allocation per host thread/device, reused across every token and request.
+-    static thread_local std::map<int, Workspace> workspaces;
+-    int device;
+-    benchmarkCheck(cudaGetDevice(&device));
+-    auto& result = workspaces[device];
+-    if (!result.partials) {
+-        OP_SCOPE("argmax_workspace_allocate", false);
+-        operationAllocation();
+-        benchmarkCheck(cudaMalloc(reinterpret_cast<void**>(&result.partials),
+-            ARGMAX_BLOCKS * sizeof(Candidate) + sizeof(int)));
+-        result.device = device;
+-    }
+-    return result;
+-}
+-} // namespace
+ 
+ int argmaxLogits(const float* logits) {
+     benchGpuEnd();
+     operationFlush();
+-    auto& scratch = workspace();
+-    int* selected = reinterpret_cast<int*>(scratch.partials + ARGMAX_BLOCKS);
+-    {
+-        OP_SCOPE("gpu_greedy_reduction", true);
+-        operationKernel();
+-        argmaxPartials<<<ARGMAX_BLOCKS, ARGMAX_THREADS>>>(logits, scratch.partials);
+-        benchmarkCheck(cudaGetLastError());
+-        operationKernel();
+-        argmaxFinish<<<1, ARGMAX_THREADS>>>(logits, scratch.partials, selected);
+-        benchmarkCheck(cudaGetLastError());
++    std::vector<float> logits_cpu;
++    { OP_SCOPE("logits_host_allocation",false); logits_cpu.resize(VOCAB_SIZE); }
++    cudaError_t status;
++    { OP_SCOPE("logits_d2h",true); operationCopy(VOCAB_SIZE * sizeof(float));
++    status = cudaMemcpy(logits_cpu.data(), logits, VOCAB_SIZE * sizeof(float), cudaMemcpyDeviceToHost); }
++    if (status != cudaSuccess) {
++        throw std::runtime_error(cudaGetErrorString(status));
+     }
+-    operationFlush();
+-    int token;
+-    {
+-        OP_SCOPE("token_d2h", true);
+-        operationCopy(sizeof(int));
+-        benchmarkCheck(cudaMemcpy(&token, selected, sizeof(int), cudaMemcpyDeviceToHost));
++    OP_SCOPE("cpu_greedy_scan",false);
++    float max_logit = __bfloat162float(__float2bfloat16_rn(logits_cpu[0]));
++    int max_token_idx = 0;
++    for (int token_idx = 1; token_idx < VOCAB_SIZE; ++token_idx) {
++      float logit = __bfloat162float(__float2bfloat16_rn(logits_cpu[token_idx]));
++      if (logit > max_logit) {
++        max_logit = logit;
++        max_token_idx = token_idx;
++      }
+     }
+-    return token;
++
++    return max_token_idx;
+ }
+--- a/src/python/tokenizer.py
++++ b/src/python/tokenizer.py
+@@ -2,10 +2,10 @@
+ Tokenize text using HuggingFace tokenizers and dump token IDs.
+ 
+ Usage:
+-    python src/python/tokenizer.py "The capital of France is" --model meta-llama/Llama-3.2-1B
+-    python src/python/tokenizer.py --decode --ids 791 6864 315 9822 374 --model meta-llama/Llama-3.2-1B
++    python python/tokenizer.py "The capital of France is" --model meta-llama/Llama-3.2-1B
++    python python/tokenizer.py --decode --ids 791 6864 315 9822 374 --model meta-llama/Llama-3.2-1B
+ 
+-Use --output to write the JSON token array consumed by the C++ engine.
++The C++ engine reads/writes plain text files of token IDs.
+ """
+ 
+ import argparse
+--- a/tests/argmax_test.cu
++++ b/tests/argmax_test.cu
+@@ -4,10 +4,6 @@
+ #include <iostream>
+ #include <stdexcept>
+ #include <vector>
+-#include <cuda_bf16.h>
+-#include <limits>
+-#include <random>
+-#include <cstring>
+ 
+ int main() {
+     float* device = nullptr;
+@@ -37,35 +33,8 @@
+         expect(469);
+         scores[9928] = 16.5626f;
+         expect(9928);
++        cudaFree(device);
+         std::cout << "Five BF16 argmax checks passed\n";
+-        auto reference = [&]() {
+-            float maximum=__bfloat162float(__float2bfloat16_rn(scores[0]));int selected=0;
+-            for(int i=1;i<VOCAB_SIZE;++i){float value=__bfloat162float(__float2bfloat16_rn(scores[i]));if(value>maximum){maximum=value;selected=i;}}
+-            return selected;
+-        };
+-        int extended_checks=0;
+-        auto validate = [&]() { expect(reference()); ++extended_checks; };
+-        const float nan=std::numeric_limits<float>::quiet_NaN();
+-        const float inf=std::numeric_limits<float>::infinity();
+-        std::fill(scores.begin(),scores.end(),-inf);validate();
+-        scores[255]=inf;scores[256]=inf;validate();
+-        scores[0]=nan;validate(); // A first-token NaN must dominate later +Inf.
+-        std::fill(scores.begin(),scores.end(),nan);validate();
+-        scores[0]=-inf;validate();
+-        scores[700]=inf;scores[900]=inf;validate();
+-        scores[0]=std::numeric_limits<float>::signaling_NaN();validate();
+-        std::fill(scores.begin(),scores.end(),-inf);scores[0]=-0.0f;scores[1000]=0.0f;validate();
+-        std::fill(scores.begin(),scores.end(),0.0f);scores[127000]=std::numeric_limits<float>::max();scores[128000]=inf;validate();
+-        uint32_t tiny_bits=0x00010000u;float tiny;std::memcpy(&tiny,&tiny_bits,sizeof(tiny));
+-        std::fill(scores.begin(),scores.end(),-1.0f);scores[0]=0.0f;scores[42]=tiny;validate();
+-        std::fill(scores.begin(),scores.end(),-1.0f);scores[0]=-tiny;scores[42]=-std::numeric_limits<float>::denorm_min();validate();
+-        std::mt19937 rng(20261015);
+-        for(int trial=0;trial<100;++trial){
+-            for(float& value:scores){uint32_t bits=rng();std::memcpy(&value,&bits,sizeof(value));}
+-            validate();
+-        }
+-        cudaFree(device);
+-        std::cout << extended_checks << " extended NaN/Inf/tie/random-bit-pattern argmax checks passed\n";
+     } catch (const std::exception& error) {
+         cudaFree(device);
+         std::cerr << error.what() << '\n';

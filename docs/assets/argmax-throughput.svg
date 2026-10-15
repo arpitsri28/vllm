@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="240" viewBox="0 0 700 240" role="img" aria-labelledby="title desc">
+<title id="title">CPU and GPU argmax throughput on A40</title>
+<desc id="desc">Median tokens per second; 256 prompt and 128 output tokens, ten repetitions per implementation.</desc>
+<rect width="700" height="240" fill="#ffffff"/>
+<g font-family="sans-serif" font-size="14" fill="#172033">
+<text x="20" y="25">Median generated tokens/s · A40 · P256/O128</text>
+<rect x="20" y="44" width="14" height="14" fill="#64748b"/><text x="42" y="56">CPU argmax</text>
+<rect x="170" y="44" width="14" height="14" fill="#2563eb"/><text x="192" y="56">GPU argmax</text>
+<text x="20" y="88">Decode (instrumented)</text>
+<rect x="250" y="73" width="304.760" height="19" fill="#64748b"/>
+<text x="564.760" y="88">95.238</text>
+<rect x="250" y="98" width="337.344" height="19" fill="#2563eb"/>
+<text x="597.344" y="113">105.420</text>
+<text x="20" y="164">End-to-end (uninstrumented)</text>
+<rect x="250" y="149" width="311.661" height="19" fill="#64748b"/>
+<text x="571.661" y="164">97.394</text>
+<rect x="250" y="174" width="344.321" height="19" fill="#2563eb"/>
+<text x="604.321" y="189">107.600</text>
+</g>
+</svg>

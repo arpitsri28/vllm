@@ -1,3 +1,5 @@
+#include <cstddef>
+#include "operation_profile.cuh"
 #include "softmax.cuh"
 #include <iostream>
 
@@ -43,6 +45,7 @@ __global__ void softmaxKernel(__nv_bfloat16* input, int row_length) {
 }
 
 void softmaxRows(__nv_bfloat16* input, int num_rows, int row_length) {
+    OP_SCOPE("softmax",true);
     if (row_length > 1024) {
         std::cout
             << "Softmax row length exceeds 1024; kernel not launched"
@@ -50,6 +53,7 @@ void softmaxRows(__nv_bfloat16* input, int num_rows, int row_length) {
         return;
     }
 
+    operationKernel();
     softmaxKernel<<<num_rows, row_length>>>(
         input,
         row_length

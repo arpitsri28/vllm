@@ -1,5 +1,7 @@
 #include "../include/weights.cuh"
 #include "engine.cuh"
+#include "paged_engine.cuh"
+#include "scheduler.cuh"
 #include <cuda_runtime.h>
 #include <stdexcept>
 #include <cstdlib>
@@ -222,6 +224,10 @@ int main(int argc, char** argv)
     try {
         int max_new_tokens = argc > 3 ? std::stoi(argv[3]) : 32;
         int max_seq_len = argc > 4 ? std::stoi(argv[4]) : 1024;
+        std::string mode = argc > 5 ? argv[5] : "contiguous";
+        if (mode != "contiguous" && mode != "paged" && mode != "batch") {
+            throw std::invalid_argument("Mode must be contiguous, paged, or batch");
+        }
         SafeTensorModel Model = loadSafeTensors(model_path);
         if (Model.tensor_data.empty()) {
             throw std::runtime_error("Model contains no tensor data");
@@ -231,8 +237,30 @@ int main(int argc, char** argv)
         if (cublasCreate(&cublas_handle) != CUBLAS_STATUS_SUCCESS) {
             throw std::runtime_error("Failed to create cuBLAS handle");
         }
-        std::vector<int> input_tokens = readTokens(tokens_path);
-        std::vector<int> generated_tokens = generate(cublas_handle, w, input_tokens, max_new_tokens, max_seq_len);
+        std::vector<int> generated_tokens;
+        if (mode == "batch") {
+            std::ifstream file(tokens_path);
+            json data;
+            file >> data;
+            std::vector<Request> requests;
+            for (const auto& item : data) {
+                Request request;
+                request.request_id = item.at("request_id").get<int>();
+                request.prompt_tokens = item.at("prompt_tokens").get<std::vector<int>>();
+                request.max_new_tokens = item.value("max_new_tokens", max_new_tokens);
+                requests.push_back(std::move(request));
+            }
+            int batch_size = argc > 6 ? std::stoi(argv[6]) : MAX_BATCH_SIZE;
+            generateContinuous(cublas_handle, w, requests, batch_size, max_seq_len);
+            for (const auto& request : requests) {
+                std::cout << json({{"request_id", request.request_id}, {"generated_tokens", request.generated_tokens}}) << '\n';
+            }
+        } else {
+            std::vector<int> input_tokens = readTokens(tokens_path);
+            generated_tokens = mode == "paged"
+                ? generatePaged(cublas_handle, w, input_tokens, max_new_tokens, max_seq_len)
+                : generate(cublas_handle, w, input_tokens, max_new_tokens, max_seq_len);
+        }
         for (int token : generated_tokens) {
             std::cout << token << " ";
         }

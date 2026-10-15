@@ -1,0 +1,2 @@
+Five BF16 argmax checks passed
+111 extended NaN/Inf/tie/random-bit-pattern argmax checks passed

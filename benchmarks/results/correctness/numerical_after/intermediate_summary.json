@@ -1,0 +1,10 @@
+{
+  "method": "Decode teacher forcing: each path consumes identical reference tokens; selected batch row 2. All logits and layer tensors compared; cache data gathered by logical position independently.",
+  "tensor_comparisons": 5480,
+  "cache_comparisons": 704,
+  "tensor_mismatches": 0,
+  "cache_mismatches": 0,
+  "prefill_tokens_equal": true,
+  "cuda_error": null,
+  "original_trace_sha256": "e6dfc48c623180e5d9bf9d1aae90cdf7a627d2ba39d75076af20a8204c2918ae"
+}

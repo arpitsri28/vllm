@@ -1,0 +1,1480 @@
+{
+  "metadata": [
+    {
+      "build": "Release; CUDA architecture 86; no fast-math",
+      "config": {
+        "cases": [
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 128,
+            "prompt_tokens": 256
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 128,
+            "prompt_tokens": 256,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "batch",
+            "output_tokens": 128,
+            "prompt_tokens": 128,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 2,
+            "mode": "batch",
+            "output_tokens": 128,
+            "prompt_tokens": 128,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 4,
+            "mode": "batch",
+            "output_tokens": 128,
+            "prompt_tokens": 128,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 8,
+            "mode": "batch",
+            "output_tokens": 128,
+            "prompt_tokens": 128
+          }
+        ],
+        "eos_policy": "preserve engine EOS stopping; incomplete runs excluded",
+        "max_seq_len": 1024,
+        "prompts_file": "benchmarks/prompts.json",
+        "repetitions": 5,
+        "seed": 0,
+        "warmups": 2
+      },
+      "cuda_driver": 13000,
+      "cuda_runtime": 12080,
+      "gpu": "NVIDIA A40",
+      "model_loaded_device_used_mib": 2640.25,
+      "model_tensor_bytes": 2471628800,
+      "precision": "BF16",
+      "type": "metadata",
+      "vram_mib": 45488.0625
+    },
+    {
+      "build": "Release; CUDA architecture 86; no fast-math",
+      "config": {
+        "cases": [
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 64,
+            "prompt_tokens": 128
+          },
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 128,
+            "prompt_tokens": 128
+          },
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 256,
+            "prompt_tokens": 128
+          },
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 64,
+            "prompt_tokens": 256
+          },
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 128,
+            "prompt_tokens": 256
+          },
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 256,
+            "prompt_tokens": 256
+          },
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 64,
+            "prompt_tokens": 512
+          },
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 128,
+            "prompt_tokens": 512
+          },
+          {
+            "batch_size": 1,
+            "mode": "contiguous",
+            "output_tokens": 256,
+            "prompt_tokens": 512
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 64,
+            "prompt_tokens": 128,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 128,
+            "prompt_tokens": 128,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 256,
+            "prompt_tokens": 128,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 64,
+            "prompt_tokens": 256,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 128,
+            "prompt_tokens": 256,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 256,
+            "prompt_tokens": 256,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 64,
+            "prompt_tokens": 512,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 128,
+            "prompt_tokens": 512,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          },
+          {
+            "batch_size": 1,
+            "mode": "paged",
+            "output_tokens": 256,
+            "prompt_tokens": 512,
+            "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+          }
+        ],
+        "eos_policy": "preserve engine EOS stopping; incomplete runs excluded",
+        "max_seq_len": 1024,
+        "prompts_file": "benchmarks/prompts.json",
+        "repetitions": 5,
+        "seed": 0,
+        "warmups": 2
+      },
+      "cuda_driver": 13000,
+      "cuda_runtime": 12080,
+      "gpu": "NVIDIA A40",
+      "model_loaded_device_used_mib": 2640.25,
+      "model_tensor_bytes": 2471628800,
+      "precision": "BF16",
+      "type": "metadata",
+      "vram_mib": 45488.0625
+    }
+  ],
+  "configurations": [
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 128,
+      "output_tokens": 64,
+      "batch_size": 1,
+      "successful_repetitions": 5,
+      "attempted_repetitions": 5,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 11.700821,
+          "mean": 11.646334,
+          "stdev": 0.07873169089699528,
+          "n": 5
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 10.663040161132812,
+          "mean": 10.673100852966309,
+          "stdev": 0.05759679348899295,
+          "n": 5
+        },
+        "ttft_wall_ms": {
+          "median": 12.517385,
+          "mean": 12.4824088,
+          "stdev": 0.1366279287122512,
+          "n": 5
+        },
+        "decode_wall_ms": {
+          "median": 625.126459,
+          "mean": 645.3773168,
+          "stdev": 39.0719355548366,
+          "n": 5
+        },
+        "decode_gpu_stream_ms": {
+          "median": 556.1322870254517,
+          "mean": 558.788350868225,
+          "stdev": 6.233966270346457,
+          "n": 5
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 100.77960881831751,
+          "mean": 97.8853232904751,
+          "stdev": 5.535462334845878,
+          "n": 5
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 113.28239965524025,
+          "mean": 112.75512073586486,
+          "stdev": 1.2528212187460475,
+          "n": 5
+        },
+        "e2e_wall_ms": {
+          "median": 640.872747,
+          "mean": 659.741031,
+          "stdev": 38.620544052878536,
+          "n": 5
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 99.86381898682922,
+          "mean": 97.25721875930556,
+          "stdev": 5.328440923205496,
+          "n": 5
+        },
+        "mean_ttft_wall_ms": {
+          "median": 12.517385,
+          "mean": 12.4824088,
+          "stdev": 0.1366279287122512,
+          "n": 5
+        },
+        "p95_ttft_wall_ms": {
+          "median": 12.517385,
+          "mean": 12.4824088,
+          "stdev": 0.1366279287122512,
+          "n": 5
+        },
+        "mean_itl_wall_ms": {
+          "median": 9.922642206349208,
+          "mean": 10.244084393650795,
+          "stdev": 0.6201894532513742,
+          "n": 5
+        },
+        "p95_itl_wall_ms": {
+          "median": 11.28861500000005,
+          "mean": 11.4596454,
+          "stdev": 0.38553640552975965,
+          "n": 5
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 630.120363,
+          "mean": 630.2854316,
+          "stdev": 7.5948222272440296,
+          "n": 5
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 101.56789679878986,
+          "mean": 101.55310162333659,
+          "stdev": 1.22467678490286,
+          "n": 5
+        }
+      }
+    },
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 128,
+      "output_tokens": 128,
+      "batch_size": 1,
+      "successful_repetitions": 5,
+      "attempted_repetitions": 5,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 11.520665,
+          "mean": 11.8209782,
+          "stdev": 0.6608024528761979,
+          "n": 5
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 10.621952056884766,
+          "mean": 10.660179138183594,
+          "stdev": 0.06451605300593019,
+          "n": 5
+        },
+        "ttft_wall_ms": {
+          "median": 12.344236,
+          "mean": 16.6658464,
+          "stdev": 9.715762562037233,
+          "n": 5
+        },
+        "decode_wall_ms": {
+          "median": 1264.625941,
+          "mean": 1284.6786762,
+          "stdev": 39.0074397812425,
+          "n": 5
+        },
+        "decode_gpu_stream_ms": {
+          "median": 1126.6683807373047,
+          "mean": 1146.2249164581299,
+          "stdev": 42.243256425796915,
+          "n": 5
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 100.42495245635642,
+          "mean": 98.9291090789553,
+          "stdev": 2.952401294731453,
+          "n": 5
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 112.72172200030123,
+          "mean": 110.9150906556518,
+          "stdev": 3.955451285369866,
+          "n": 5
+        },
+        "e2e_wall_ms": {
+          "median": 1278.080622,
+          "mean": 1302.51954,
+          "stdev": 42.8259292485611,
+          "n": 5
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 100.15017659817082,
+          "mean": 98.3551892794342,
+          "stdev": 3.1979495626008076,
+          "n": 5
+        },
+        "mean_ttft_wall_ms": {
+          "median": 12.344236,
+          "mean": 16.6658464,
+          "stdev": 9.715762562037233,
+          "n": 5
+        },
+        "p95_ttft_wall_ms": {
+          "median": 12.344236,
+          "mean": 16.6658464,
+          "stdev": 9.715762562037233,
+          "n": 5
+        },
+        "mean_itl_wall_ms": {
+          "median": 9.95768457480315,
+          "mean": 10.115580127559054,
+          "stdev": 0.3071451951278936,
+          "n": 5
+        },
+        "p95_itl_wall_ms": {
+          "median": 11.36966300000006,
+          "mean": 11.56825200000003,
+          "stdev": 0.6186901942620313,
+          "n": 5
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 1242.203192,
+          "mean": 1254.1464604,
+          "stdev": 24.12312641288308,
+          "n": 5
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 103.04272346451997,
+          "mean": 102.09143842581551,
+          "stdev": 1.9492222183951193,
+          "n": 5
+        }
+      }
+    },
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 128,
+      "output_tokens": 256,
+      "batch_size": 1,
+      "successful_repetitions": 5,
+      "attempted_repetitions": 5,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 11.558723,
+          "mean": 11.7353632,
+          "stdev": 0.3349884646121415,
+          "n": 5
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 10.62390422821045,
+          "mean": 10.629663848876953,
+          "stdev": 0.027532178853104897,
+          "n": 5
+        },
+        "ttft_wall_ms": {
+          "median": 12.278768,
+          "mean": 14.8362444,
+          "stdev": 3.6213368990516885,
+          "n": 5
+        },
+        "decode_wall_ms": {
+          "median": 2655.3425930000003,
+          "mean": 2687.2110852,
+          "stdev": 60.56527831009548,
+          "n": 5
+        },
+        "decode_gpu_stream_ms": {
+          "median": 2375.973403930664,
+          "mean": 2375.2911207199095,
+          "stdev": 13.253349476729435,
+          "n": 5
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 96.03280596342996,
+          "mean": 94.93186087827381,
+          "stdev": 2.1043245326269675,
+          "n": 5
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 107.3244336734341,
+          "mean": 107.35793039968638,
+          "stdev": 0.5978586710245728,
+          "n": 5
+        },
+        "e2e_wall_ms": {
+          "median": 2674.340897,
+          "mean": 2703.1919198,
+          "stdev": 60.587872055299094,
+          "n": 5
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 95.72452049294597,
+          "mean": 94.74038684549092,
+          "stdev": 2.0932106428170267,
+          "n": 5
+        },
+        "mean_ttft_wall_ms": {
+          "median": 12.278768,
+          "mean": 14.8362444,
+          "stdev": 3.6213368990516885,
+          "n": 5
+        },
+        "p95_ttft_wall_ms": {
+          "median": 12.278768,
+          "mean": 14.8362444,
+          "stdev": 3.6213368990516885,
+          "n": 5
+        },
+        "mean_itl_wall_ms": {
+          "median": 10.413108207843138,
+          "mean": 10.538082687058823,
+          "stdev": 0.23751089533370814,
+          "n": 5
+        },
+        "p95_itl_wall_ms": {
+          "median": 13.039528000000018,
+          "mean": 13.248449600000026,
+          "stdev": 0.5351163538249661,
+          "n": 5
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2686.25,
+          "mean": 2686.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 2613.472377,
+          "mean": 2624.0871184,
+          "stdev": 39.5388176425387,
+          "n": 5
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 97.95397198491224,
+          "mean": 97.5754015707788,
+          "stdev": 1.465514842732654,
+          "n": 5
+        }
+      }
+    },
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 256,
+      "output_tokens": 64,
+      "batch_size": 1,
+      "successful_repetitions": 5,
+      "attempted_repetitions": 5,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 15.769411,
+          "mean": 15.7029814,
+          "stdev": 0.11401297009682718,
+          "n": 5
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 14.678784370422363,
+          "mean": 14.688685035705566,
+          "stdev": 0.05431956709552817,
+          "n": 5
+        },
+        "ttft_wall_ms": {
+          "median": 16.931297,
+          "mean": 16.8355734,
+          "stdev": 0.1639271229488887,
+          "n": 5
+        },
+        "decode_wall_ms": {
+          "median": 661.8093190000001,
+          "mean": 656.020552,
+          "stdev": 9.089752430715654,
+          "n": 5
+        },
+        "decode_gpu_stream_ms": {
+          "median": 577.5655031204224,
+          "mean": 577.2289205551148,
+          "stdev": 1.9855866933149522,
+          "n": 5
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 95.1935824886745,
+          "mean": 96.04840623025294,
+          "stdev": 1.3378419896324398,
+          "n": 5
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 109.07853682331942,
+          "mean": 109.14317467269477,
+          "stdev": 0.37577274356856294,
+          "n": 5
+        },
+        "e2e_wall_ms": {
+          "median": 680.068123,
+          "mean": 676.626973,
+          "stdev": 9.700414311629384,
+          "n": 5
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 94.10821921438597,
+          "mean": 94.60246644730606,
+          "stdev": 1.3634738896910341,
+          "n": 5
+        },
+        "mean_ttft_wall_ms": {
+          "median": 16.931297,
+          "mean": 16.8355734,
+          "stdev": 0.1639271229488887,
+          "n": 5
+        },
+        "p95_ttft_wall_ms": {
+          "median": 16.931297,
+          "mean": 16.8355734,
+          "stdev": 0.1639271229488887,
+          "n": 5
+        },
+        "mean_itl_wall_ms": {
+          "median": 10.504909825396826,
+          "mean": 10.413024634920635,
+          "stdev": 0.14428178461453348,
+          "n": 5
+        },
+        "p95_itl_wall_ms": {
+          "median": 11.66844599999996,
+          "mean": 11.61732379999999,
+          "stdev": 0.4866222130972765,
+          "n": 5
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 655.115008,
+          "mean": 656.824611,
+          "stdev": 12.876516756048481,
+          "n": 5
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 97.69277030514922,
+          "mean": 97.4680228182174,
+          "stdev": 1.8830922836125352,
+          "n": 5
+        }
+      }
+    },
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 256,
+      "output_tokens": 128,
+      "batch_size": 1,
+      "successful_repetitions": 10,
+      "attempted_repetitions": 10,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 15.514142,
+          "mean": 15.5682727,
+          "stdev": 0.15042016373851677,
+          "n": 10
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 14.603871822357178,
+          "mean": 14.615945529937743,
+          "stdev": 0.0435865119089186,
+          "n": 10
+        },
+        "ttft_wall_ms": {
+          "median": 16.555047000000002,
+          "mean": 17.2575024,
+          "stdev": 2.1667404632926908,
+          "n": 10
+        },
+        "decode_wall_ms": {
+          "median": 1310.5623285000001,
+          "mean": 1325.2176411,
+          "stdev": 38.75839458294299,
+          "n": 10
+        },
+        "decode_gpu_stream_ms": {
+          "median": 1179.0696768760681,
+          "mean": 1179.4564776420593,
+          "stdev": 4.271444915895339,
+          "n": 10
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 96.90510008995157,
+          "mean": 95.90354942780563,
+          "stdev": 2.6690935178642845,
+          "n": 10
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 107.71204137079965,
+          "mean": 107.67798439547049,
+          "stdev": 0.389199526892507,
+          "n": 10
+        },
+        "e2e_wall_ms": {
+          "median": 1336.175207,
+          "mean": 1346.9522613,
+          "stdev": 38.47771173442836,
+          "n": 10
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 95.79607594497358,
+          "mean": 95.09622957186482,
+          "stdev": 2.6022297490336155,
+          "n": 10
+        },
+        "mean_ttft_wall_ms": {
+          "median": 16.555047000000002,
+          "mean": 17.2575024,
+          "stdev": 2.1667404632926908,
+          "n": 10
+        },
+        "p95_ttft_wall_ms": {
+          "median": 16.555047000000002,
+          "mean": 17.2575024,
+          "stdev": 2.1667404632926908,
+          "n": 10
+        },
+        "mean_itl_wall_ms": {
+          "median": 10.319388413385827,
+          "mean": 10.434784575590552,
+          "stdev": 0.3051842093145118,
+          "n": 10
+        },
+        "p95_itl_wall_ms": {
+          "median": 11.300021000000015,
+          "mean": 11.350032700000003,
+          "stdev": 0.2601248851165485,
+          "n": 10
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 10
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 10
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 10
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 10
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 1300.877189,
+          "mean": 1303.7232841,
+          "stdev": 9.997514117229178,
+          "n": 10
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 98.39516341556165,
+          "mean": 98.18549612771088,
+          "stdev": 0.7465963415164856,
+          "n": 10
+        }
+      }
+    },
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 256,
+      "output_tokens": 256,
+      "batch_size": 1,
+      "successful_repetitions": 5,
+      "attempted_repetitions": 5,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 15.532047,
+          "mean": 15.5555916,
+          "stdev": 0.061992177593628336,
+          "n": 5
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 14.625920295715332,
+          "mean": 14.623590469360352,
+          "stdev": 0.018657524193603208,
+          "n": 5
+        },
+        "ttft_wall_ms": {
+          "median": 16.569447,
+          "mean": 16.616609,
+          "stdev": 0.12611639050297913,
+          "n": 5
+        },
+        "decode_wall_ms": {
+          "median": 2688.309064,
+          "mean": 2716.46059,
+          "stdev": 54.71229164354839,
+          "n": 5
+        },
+        "decode_gpu_stream_ms": {
+          "median": 2398.7369260787964,
+          "mean": 2413.75922164917,
+          "stdev": 34.9562491904208,
+          "n": 5
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 94.85516506073871,
+          "mean": 93.90244689171071,
+          "stdev": 1.8802663239273505,
+          "n": 5
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 106.3059467787688,
+          "mean": 105.6617311699342,
+          "stdev": 1.5010907999854266,
+          "n": 5
+        },
+        "e2e_wall_ms": {
+          "median": 2711.644057,
+          "mean": 2735.664881,
+          "stdev": 54.179462075068464,
+          "n": 5
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 94.40767099912922,
+          "mean": 93.60793597715835,
+          "stdev": 1.8444732909632293,
+          "n": 5
+        },
+        "mean_ttft_wall_ms": {
+          "median": 16.569447,
+          "mean": 16.616609,
+          "stdev": 0.12611639050297913,
+          "n": 5
+        },
+        "p95_ttft_wall_ms": {
+          "median": 16.569447,
+          "mean": 16.616609,
+          "stdev": 0.12611639050297913,
+          "n": 5
+        },
+        "mean_itl_wall_ms": {
+          "median": 10.54238848627451,
+          "mean": 10.65278662745098,
+          "stdev": 0.21455800644528775,
+          "n": 5
+        },
+        "p95_itl_wall_ms": {
+          "median": 11.617606999999907,
+          "mean": 12.05720439999991,
+          "stdev": 0.9695740497060266,
+          "n": 5
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2698.25,
+          "mean": 2698.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 2628.212635,
+          "mean": 2627.8428178,
+          "stdev": 13.76388285320358,
+          "n": 5
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 97.40459983748613,
+          "mean": 97.42043809781275,
+          "stdev": 0.5084511726678973,
+          "n": 5
+        }
+      }
+    },
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 512,
+      "output_tokens": 64,
+      "batch_size": 1,
+      "successful_repetitions": 5,
+      "attempted_repetitions": 5,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 28.057755,
+          "mean": 28.3197796,
+          "stdev": 0.40003256043327307,
+          "n": 5
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 27.14566421508789,
+          "mean": 27.144678115844727,
+          "stdev": 0.007783538531880543,
+          "n": 5
+        },
+        "ttft_wall_ms": {
+          "median": 29.383285,
+          "mean": 29.7717868,
+          "stdev": 0.6430459790965177,
+          "n": 5
+        },
+        "decode_wall_ms": {
+          "median": 671.181615,
+          "mean": 671.5537128,
+          "stdev": 3.4416445521983827,
+          "n": 5
+        },
+        "decode_gpu_stream_ms": {
+          "median": 607.6878099441528,
+          "mean": 607.7154567718505,
+          "stdev": 0.07537672216857308,
+          "n": 5
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 93.86431122670129,
+          "mean": 93.81426967650104,
+          "stdev": 0.47983157231166046,
+          "n": 5
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 103.67165338694184,
+          "mean": 103.66693832341952,
+          "stdev": 0.012858017199039336,
+          "n": 5
+        },
+        "e2e_wall_ms": {
+          "median": 702.875584,
+          "mean": 709.5166002,
+          "stdev": 11.527206054780791,
+          "n": 5
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 91.05452153535042,
+          "mean": 90.22120685096101,
+          "stdev": 1.4578593472071146,
+          "n": 5
+        },
+        "mean_ttft_wall_ms": {
+          "median": 29.383285,
+          "mean": 29.7717868,
+          "stdev": 0.6430459790965177,
+          "n": 5
+        },
+        "p95_ttft_wall_ms": {
+          "median": 29.383285,
+          "mean": 29.7717868,
+          "stdev": 0.6430459790965177,
+          "n": 5
+        },
+        "mean_itl_wall_ms": {
+          "median": 10.653676428571428,
+          "mean": 10.659582742857143,
+          "stdev": 0.05462927860632308,
+          "n": 5
+        },
+        "p95_itl_wall_ms": {
+          "median": 11.29340099999996,
+          "mean": 11.3711302,
+          "stdev": 0.22275290779966522,
+          "n": 5
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 692.094117,
+          "mean": 695.0761746,
+          "stdev": 7.361517049383677,
+          "n": 5
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 92.47297214057954,
+          "mean": 92.08447067349582,
+          "stdev": 0.9715529477317822,
+          "n": 5
+        }
+      }
+    },
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 512,
+      "output_tokens": 128,
+      "batch_size": 1,
+      "successful_repetitions": 5,
+      "attempted_repetitions": 5,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 28.025141,
+          "mean": 28.066205800000002,
+          "stdev": 0.10726380204989949,
+          "n": 5
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 27.127775192260742,
+          "mean": 27.13105888366699,
+          "stdev": 0.010235589543621096,
+          "n": 5
+        },
+        "ttft_wall_ms": {
+          "median": 29.336906,
+          "mean": 29.384948599999998,
+          "stdev": 0.1289723697320475,
+          "n": 5
+        },
+        "decode_wall_ms": {
+          "median": 1354.527989,
+          "mean": 1356.0322188,
+          "stdev": 4.426944797968499,
+          "n": 5
+        },
+        "decode_gpu_stream_ms": {
+          "median": 1227.4389114379883,
+          "mean": 1227.4237949371338,
+          "stdev": 0.4087730020147745,
+          "n": 5
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 93.75959820052121,
+          "mean": 93.65638984861448,
+          "stdev": 0.3055529594775226,
+          "n": 5
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 103.46747102160464,
+          "mean": 103.46875446882495,
+          "stdev": 0.034455382297594775,
+          "n": 5
+        },
+        "e2e_wall_ms": {
+          "median": 1386.206665,
+          "mean": 1394.4602492,
+          "stdev": 17.565485154324232,
+          "n": 5
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 92.3383238818867,
+          "mean": 91.80327137045431,
+          "stdev": 1.1395156280323147,
+          "n": 5
+        },
+        "mean_ttft_wall_ms": {
+          "median": 29.336906,
+          "mean": 29.384948599999998,
+          "stdev": 0.1289723697320475,
+          "n": 5
+        },
+        "p95_ttft_wall_ms": {
+          "median": 29.336906,
+          "mean": 29.384948599999998,
+          "stdev": 0.1289723697320475,
+          "n": 5
+        },
+        "mean_itl_wall_ms": {
+          "median": 10.665574716535433,
+          "mean": 10.677419045669291,
+          "stdev": 0.034857833054870675,
+          "n": 5
+        },
+        "p95_itl_wall_ms": {
+          "median": 11.606159000000048,
+          "mean": 11.628689999999972,
+          "stdev": 0.1421321479433665,
+          "n": 5
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 1372.909133,
+          "mean": 1372.3107966,
+          "stdev": 3.7244601634691015,
+          "n": 5
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 93.2326815543152,
+          "mean": 93.27388136761351,
+          "stdev": 0.25320580092893974,
+          "n": 5
+        }
+      }
+    },
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 512,
+      "output_tokens": 256,
+      "batch_size": 1,
+      "successful_repetitions": 5,
+      "attempted_repetitions": 5,
+      "incomplete_repetitions": 0,
+      "errors": [],
+      "statistics": {
+        "prefill_wall_ms": {
+          "median": 28.089049,
+          "mean": 28.2402448,
+          "stdev": 0.3288717491427322,
+          "n": 5
+        },
+        "prefill_gpu_stream_ms": {
+          "median": 27.147808074951172,
+          "mean": 27.149292755126954,
+          "stdev": 0.015631568843859495,
+          "n": 5
+        },
+        "ttft_wall_ms": {
+          "median": 29.418966,
+          "mean": 34.27031,
+          "stdev": 10.884065966902142,
+          "n": 5
+        },
+        "decode_wall_ms": {
+          "median": 2755.607888,
+          "mean": 2755.6204034,
+          "stdev": 12.214205713649829,
+          "n": 5
+        },
+        "decode_gpu_stream_ms": {
+          "median": 2485.150113105774,
+          "mean": 2489.893673324585,
+          "stdev": 9.03575283092134,
+          "n": 5
+        },
+        "decode_wall_tokens_per_s": {
+          "median": 92.5385651240377,
+          "mean": 92.53959631418637,
+          "stdev": 0.4093336845181362,
+          "n": 5
+        },
+        "decode_gpu_stream_tokens_per_s": {
+          "median": 102.60949576253891,
+          "mean": 102.41508692940457,
+          "stdev": 0.3703349235610579,
+          "n": 5
+        },
+        "e2e_wall_ms": {
+          "median": 2800.068221,
+          "mean": 2794.9285378,
+          "stdev": 11.398294725557221,
+          "n": 5
+        },
+        "e2e_output_tokens_per_s": {
+          "median": 91.42634385835558,
+          "mean": 91.59569310914753,
+          "stdev": 0.37468585971372165,
+          "n": 5
+        },
+        "mean_ttft_wall_ms": {
+          "median": 29.418966,
+          "mean": 34.27031,
+          "stdev": 10.884065966902142,
+          "n": 5
+        },
+        "p95_ttft_wall_ms": {
+          "median": 29.418966,
+          "mean": 34.27031,
+          "stdev": 10.884065966902142,
+          "n": 5
+        },
+        "mean_itl_wall_ms": {
+          "median": 10.806305443137257,
+          "mean": 10.806354523137255,
+          "stdev": 0.04789884593588109,
+          "n": 5
+        },
+        "p95_itl_wall_ms": {
+          "median": 11.751836999999796,
+          "mean": 11.918986599999972,
+          "stdev": 0.3148243403491489,
+          "n": 5
+        },
+        "model_loaded_device_used_mib": {
+          "median": 2640.25,
+          "mean": 2640.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "prefill_observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "decode_observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "observed_peak_device_used_mib": {
+          "median": 2724.25,
+          "mean": 2724.25,
+          "stdev": 0.0,
+          "n": 5
+        },
+        "uninstrumented_e2e_wall_ms": {
+          "median": 2730.999237,
+          "mean": 2733.6197174,
+          "stdev": 16.79939835390559,
+          "n": 5
+        },
+        "uninstrumented_output_tokens_per_s": {
+          "median": 93.73858349415569,
+          "mean": 93.65153856996007,
+          "stdev": 0.5723782612459931,
+          "n": 5
+        }
+      }
+    }
+  ],
+  "exclusions": [
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 128,
+      "prompt_tokens": 256,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "batch",
+      "output_tokens": 128,
+      "prompt_tokens": 128,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 2,
+      "mode": "batch",
+      "output_tokens": 128,
+      "prompt_tokens": 128,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 4,
+      "mode": "batch",
+      "output_tokens": 128,
+      "prompt_tokens": 128,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 8,
+      "mode": "batch",
+      "output_tokens": 128,
+      "prompt_tokens": 128,
+      "reason": "Scheduler and paged kernels support at most 4 active requests",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 64,
+      "prompt_tokens": 128,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 128,
+      "prompt_tokens": 128,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 256,
+      "prompt_tokens": 128,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 64,
+      "prompt_tokens": 256,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 128,
+      "prompt_tokens": 256,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 256,
+      "prompt_tokens": 256,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 64,
+      "prompt_tokens": 512,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 128,
+      "prompt_tokens": 512,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    },
+    {
+      "batch_size": 1,
+      "mode": "paged",
+      "output_tokens": 256,
+      "prompt_tokens": 512,
+      "reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement",
+      "status": "unsupported",
+      "type": "unsupported"
+    }
+  ]
+}

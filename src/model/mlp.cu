@@ -1,11 +1,15 @@
+#include <cstddef>
+#include "operation_profile.cuh"
 #include "../../include/mlp.cuh"
 #include <iostream>
 
 constexpr int EMBEDDING_LENGTH = 2048;
 constexpr int MLP_DIM = 8192;
 void gateProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+    OP_SCOPE("gate_projection",true);
   const float alpha = 1.0f;
   const float beta = 0.0f;
+    operationBlas();
   cublasStatus_t status = cublasGemmEx(
       cublas_handle,
       CUBLAS_OP_T,
@@ -34,8 +38,10 @@ void gateProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, co
 }
 
 void upProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+    OP_SCOPE("up_projection",true);
   const float alpha = 1.0f;
   const float beta = 0.0f;
+    operationBlas();
   cublasStatus_t status = cublasGemmEx(
       cublas_handle,
       CUBLAS_OP_T,
@@ -64,8 +70,10 @@ void upProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, cons
 }
 
 void downProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+    OP_SCOPE("down_projection",true);
   const float alpha = 1.0f;
   const float beta = 0.0f;
+    operationBlas();
   cublasStatus_t status = cublasGemmEx(
       cublas_handle,
       CUBLAS_OP_T,

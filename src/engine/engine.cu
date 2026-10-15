@@ -1,3 +1,6 @@
+#include <cstddef>
+#include "operation_profile.cuh"
+#include "benchmark_trace.cuh"
 #include "engine.cuh"
 #include "embedding.cuh"
 #include "transformer.cuh"
@@ -46,11 +49,11 @@ std::vector<int> generate(cublasHandle_t cublas_handle, const ModelWeights& weig
         }
     };
     auto cleanup = [&]() {
-        cudaFree(gpu_prompt_tokens);
-        cudaFree(prompt_hidden);
-        cudaFree(gpu_decode_token);
-        cudaFree(decode_hidden);
-        cudaFree(logits);
+        OP_FREE(cudaFree(gpu_prompt_tokens));
+        OP_FREE(cudaFree(prompt_hidden));
+        OP_FREE(cudaFree(gpu_decode_token));
+        OP_FREE(cudaFree(decode_hidden));
+        OP_FREE(cudaFree(logits));
         freeTransformerBuffers(buffers);
         freeKVCache(cache);
     };
@@ -76,29 +79,33 @@ std::vector<int> generate(cublasHandle_t cublas_handle, const ModelWeights& weig
             }
         };
         allocateKVCache(cache, max_seq_len);
-        check(cudaMalloc(reinterpret_cast<void**>(&logits), VOCAB_SIZE * sizeof(float)));
+        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&logits), VOCAB_SIZE * sizeof(float))));
         allocateTransformerBuffers(buffers, prompt_len, max_seq_len);
-        check(cudaMalloc(reinterpret_cast<void**>(&prompt_hidden), prompt_len * EMBEDDING_LENGTH * sizeof(__nv_bfloat16)));
-        check(cudaMalloc(reinterpret_cast<void**>(&gpu_prompt_tokens), prompt_len * sizeof(int)));
+        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&prompt_hidden), prompt_len * EMBEDDING_LENGTH * sizeof(__nv_bfloat16))));
+        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&gpu_prompt_tokens), prompt_len * sizeof(int))));
         check(cudaMemcpy(gpu_prompt_tokens, prompt_tokens.data(), prompt_len * sizeof(int), cudaMemcpyHostToDevice));
-        check(cudaMalloc(reinterpret_cast<void**>(&gpu_decode_token), sizeof(int)));
-        check(cudaMalloc(reinterpret_cast<void**>(&decode_hidden), EMBEDDING_LENGTH * sizeof(__nv_bfloat16)));
+        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&gpu_decode_token), sizeof(int))));
+        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&decode_hidden), EMBEDDING_LENGTH * sizeof(__nv_bfloat16))));
 
-        embeddingGatherKernel<<<prompt_len, 1024>>>(gpu_prompt_tokens, prompt_hidden, weights.embedding);
+        benchPhaseBegin("prefill");
+        OP_KERNEL("embedding", embeddingGatherKernel<<<prompt_len, 1024>>>(gpu_prompt_tokens, prompt_hidden, weights.embedding));
         check(cudaGetLastError());
         int next_token = transformerForward(cublas_handle, prompt_hidden, weights, cache, buffers, logits, prompt_len);
         check(cudaGetLastError());
         generated_tokens.push_back(next_token);
+        benchToken(0);
         trace_logits();
 
         while (generated_tokens.size() < static_cast<size_t>(max_new_tokens) &&
                next_token != 128001 && next_token != 128008 && next_token != 128009) {
+            benchPhaseBegin("decode");
             check(cudaMemcpy(gpu_decode_token, &next_token, sizeof(int), cudaMemcpyHostToDevice));
-            embeddingGatherKernel<<<1, 1024>>>(gpu_decode_token, decode_hidden, weights.embedding);
+            OP_KERNEL("embedding", embeddingGatherKernel<<<1, 1024>>>(gpu_decode_token, decode_hidden, weights.embedding));
             check(cudaGetLastError());
             next_token = decodeForward(cublas_handle, decode_hidden, weights, cache, buffers, logits);
             check(cudaGetLastError());
             generated_tokens.push_back(next_token);
+            benchToken(0);
             trace_logits();
         }
         if (trace.is_open()) {

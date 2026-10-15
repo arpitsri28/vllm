@@ -1,0 +1,9 @@
+{
+  "benchmarks/REPORT.md": "4042b4b11bdffc02b2cbcb5c2501ffabfb80958a8b33aec646580796e703f495",
+  "benchmarks/BATCHING_REPORT.md": "bb98137225600ea6eff86ee91a3f2e0e7d92bfc75e1218267a75222c21c8babe",
+  "benchmarks/results/full.jsonl": "48d483062e0b62282de1621c92f83ac745f70f0623af0a3534aae80dd739d0da",
+  "benchmarks/results/smoke.jsonl": "ca1ac23c2e3015d2db2745eea4edaf33a8944c1cb1883ed0c6e114785ac2da5d",
+  "benchmarks/results/hf.jsonl": "050c05ab0802c9bc96074e802165bfc130229557b267bb082afa0a7435db773f",
+  "benchmarks/batching_results/batching.jsonl": "6307977869ed67e4cd0b1c11914427f0748785d536492e14344ca35bd8f23dc8",
+  "benchmarks/batching_results/contiguous_regression.jsonl": "9ae3c23b28b084d219579432376f8e5105710753cd97530f1444dd6f2d9a56d9"
+}

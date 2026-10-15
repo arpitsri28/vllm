@@ -1,0 +1,52 @@
+{
+  "method": "Reference uses the engine's exact prefix at every step; this is not free-running sequence agreement.",
+  "model": "models/llama-3.2-1b-instruct",
+  "selection_precision": "BF16, round to nearest even, lowest token ID wins ties",
+  "original_report_sha256": "236ef2d7dae637112cc5ab50fd72a8ab494e4df036bd88dfb496b0a470c57439",
+  "cases": [
+    {
+      "name": "france",
+      "compared_steps": 64,
+      "matching_selections": 64,
+      "mismatch_steps": []
+    },
+    {
+      "name": "arithmetic",
+      "compared_steps": 64,
+      "matching_selections": 63,
+      "mismatch_steps": [
+        16
+      ]
+    },
+    {
+      "name": "code",
+      "compared_steps": 64,
+      "matching_selections": 63,
+      "mismatch_steps": [
+        8
+      ]
+    },
+    {
+      "name": "story",
+      "compared_steps": 64,
+      "matching_selections": 64,
+      "mismatch_steps": []
+    },
+    {
+      "name": "chat",
+      "compared_steps": 64,
+      "matching_selections": 64,
+      "mismatch_steps": []
+    },
+    {
+      "name": "long_context",
+      "compared_steps": 59,
+      "matching_selections": 58,
+      "mismatch_steps": [
+        59
+      ]
+    }
+  ],
+  "compared_steps": 379,
+  "matching_selections": 376
+}

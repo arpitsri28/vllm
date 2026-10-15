@@ -35,7 +35,8 @@ void computeDecodeAttentionScores(
     const __nv_bfloat16* q_proj,
     const __nv_bfloat16* k_cache_layer,
     __nv_bfloat16* attn_scores,
-    int total_seq_len
+    int total_seq_len,
+    int score_stride = 0
 );
 
 void decodeAttentionScoresTimesV(
@@ -43,5 +44,6 @@ void decodeAttentionScoresTimesV(
     const __nv_bfloat16* attn_scores,
     const __nv_bfloat16* v_cache_layer,
     __nv_bfloat16* attention_output,
-    int total_seq_len
+    int total_seq_len,
+    int score_stride = 0
 );

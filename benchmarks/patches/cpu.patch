@@ -1,0 +1,1061 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -92,14 +92,3 @@
+     set_target_properties(bf16_argmax_test PROPERTIES CUDA_STANDARD 17 CUDA_STANDARD_REQUIRED ON)
+     add_test(NAME bf16_argmax COMMAND bf16_argmax_test)
+ endif()
+-
+-option(BUILD_OPERATION_PROFILER "Build diagnostic operation-level timing executable" OFF)
+-if(BUILD_OPERATION_PROFILER)
+-    get_target_property(OPERATION_SOURCES tiny_vLLM SOURCES)
+-    list(REMOVE_ITEM OPERATION_SOURCES src/main.cu)
+-    add_executable(operation_profiler benchmarks/operation_profiler.cu ${OPERATION_SOURCES})
+-    target_compile_definitions(operation_profiler PRIVATE TINY_VLLM_OPERATION_PROFILE=1)
+-    target_include_directories(operation_profiler PRIVATE include ${NLOHMANN_JSON_INCLUDE_DIR})
+-    target_link_libraries(operation_profiler PRIVATE CUDA::cudart CUDA::cublas)
+-    set_target_properties(operation_profiler PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON CUDA_STANDARD 17 CUDA_STANDARD_REQUIRED ON)
+-endif()
+--- a/benchmarks/operation_profiler.cu
++++ /dev/null
+@@ -1,41 +0,0 @@
+-#define main tinyVllmCliForProfile
+-#include "../src/main.cu"
+-#undef main
+-#include "operation_profile.cuh"
+-#include "benchmark_trace.cuh"
+-#include <sstream>
+-int main(int argc,char** argv){
+-    char* gpu=nullptr;cublasHandle_t handle=nullptr;
+-    try{
+-        if(argc!=2)throw std::invalid_argument("Usage: operation_profiler OUTPUT.json");
+-        std::ostringstream quiet;auto* old=std::cout.rdbuf(quiet.rdbuf());
+-        auto loaded=loadSafeTensors("models/llama-3.2-1b-instruct/model.safetensors");std::cout.rdbuf(old);
+-        gpu=copyModelToGPU(loaded);auto weights=mapWeights(loaded,gpu);
+-        if(cublasCreate(&handle)!=CUBLAS_STATUS_SUCCESS)throw std::runtime_error("cuBLAS initialization failed");
+-        std::ifstream file("benchmarks/prompts.json");json prompts;file>>prompts;json report=json::array();
+-        for(auto c:std::vector<json>{{{"mode","contiguous"},{"prompt",256},{"batch",1}},{{"mode","batch"},{"prompt",128},{"batch",1}},{{"mode","batch"},{"prompt",128},{"batch",4}}}){
+-            auto prompt=prompts.at(std::to_string(c.at("prompt").get<int>())).get<std::vector<int>>();
+-            auto run=[&](){
+-                if(c.at("mode")=="contiguous")return std::vector<std::vector<int>>{generate(handle,weights,prompt,128,1024)};
+-                std::vector<Request> requests(c.at("batch").get<int>());
+-                for(size_t i=0;i<requests.size();++i){requests[i].request_id=i;requests[i].prompt_tokens=prompt;requests[i].max_new_tokens=128;}
+-                generateContinuous(handle,weights,requests,requests.size(),1024);
+-                std::vector<std::vector<int>> tokens;for(auto& request:requests)tokens.push_back(request.generated_tokens);return tokens;
+-            };
+-            auto expected=run();run();
+-            OperationProfile profile;
+-            // Prepare event storage outside the measured interval; reuse it each token.
+-            for(int i=0;i<4096;++i){OpEvent event;opCheck(cudaEventCreate(&event.start));opCheck(cudaEventCreate(&event.stop));profile.events.push_back(event);}
+-            benchmarkCheck(cudaDeviceSynchronize());activeOperationProfile=&profile;
+-            auto start=OpClock::now();auto actual=run();profile.flush();benchmarkCheck(cudaDeviceSynchronize());
+-            double wall=std::chrono::duration<double,std::milli>(OpClock::now()-start).count();activeOperationProfile=nullptr;
+-            if(actual!=expected)throw std::runtime_error("Profiling changed generated tokens");
+-            c["wall_ms_with_operation_probes"]=wall;c["operations"]=json::object();
+-            for(auto& item:profile.stats){const auto& x=item.second;c["operations"][item.first]={{"host_api_wall_ms",x.host_wall_ms},{"gpu_stream_elapsed_ms",x.gpu_stream_ms},{"calls",x.calls},{"explicit_kernel_launches",x.explicit_kernels},{"cublas_calls",x.cublas_calls},{"observed_allocation_calls",x.allocations},{"observed_free_calls",x.frees},{"tracked_copy_bytes",x.copy_bytes}};}
+-            c["tokens_unchanged"]=true;c["actual_output_tokens"]=0;for(auto& t:actual)c["actual_output_tokens"]=c["actual_output_tokens"].get<int>()+t.size();
+-            c["method"]="Full 128-output-token call after two warmups. CUDA events surround operations; host timers cover API submission/CPU work. Pending GPU intervals are completed at existing argmax dependency boundaries using an explicit profiler readiness wait. Intervals include queue idle/submission gaps and are not kernel-active time. Host wall and GPU intervals overlap and must not be summed. Profiling overhead makes total wall unsuitable for performance claims. Counts cover explicit source launches and cuBLAS API calls; physical cuBLAS kernel counts require external profiling.";
+-            report.push_back(c);std::cout<<c.at("mode")<<" batch="<<c.at("batch")<<" done\n";
+-        }
+-        std::ofstream out(argv[1]);out<<report.dump(2)<<'\n';cublasDestroy(handle);cudaFree(gpu);return 0;
+-    }catch(const std::exception& e){activeOperationProfile=nullptr;std::cerr<<e.what()<<'\n';if(handle)cublasDestroy(handle);cudaFree(gpu);return 1;}
+-}
+--- a/include/benchmark_trace.cuh
++++ b/include/benchmark_trace.cuh
+@@ -2,7 +2,6 @@
+ 
+ // Opt-in observations only. Production calls leave activeBenchmarkTrace null.
+ #include <cuda_runtime.h>
+-#include "operation_profile.cuh"
+ #include <chrono>
+ #include <map>
+ #include <string>
+@@ -45,7 +44,6 @@
+     peak = std::max(peak, total - free);
+ }
+ inline void benchPhaseBegin(const char* phase) {
+-    operationPhase(phase);
+     auto* t = activeBenchmarkTrace;
+     if (!t) return;
+     t->phase = phase;
+--- a/include/operation_profile.cuh
++++ /dev/null
+@@ -1,64 +0,0 @@
+-#pragma once
+-// Only the dedicated operation_profiler target enables these observations.
+-#ifdef TINY_VLLM_OPERATION_PROFILE
+-#include <cuda_runtime.h>
+-#include <chrono>
+-#include <map>
+-#include <string>
+-#include <vector>
+-#include <stdexcept>
+-using OpClock=std::chrono::steady_clock;
+-inline void opCheck(cudaError_t status){if(status!=cudaSuccess)throw std::runtime_error(cudaGetErrorString(status));}
+-struct OpStats {double host_wall_ms=0,gpu_stream_ms=0;size_t calls=0,explicit_kernels=0,cublas_calls=0,allocations=0,frees=0,copy_bytes=0;};
+-struct OpEvent {cudaEvent_t start{},stop{};OpStats* stats=nullptr;};
+-struct OperationProfile {
+-    std::string phase="setup";std::map<std::string,OpStats> stats;std::vector<OpEvent> events;size_t used=0;
+-    OpStats* current=nullptr;
+-    ~OperationProfile(){for(auto& e:events){cudaEventDestroy(e.start);cudaEventDestroy(e.stop);}}
+-    void flush(){
+-        if(!used)return;
+-        auto begin=OpClock::now();opCheck(cudaEventSynchronize(events[used-1].stop));
+-        auto& wait=stats[phase+".profiler_readiness_wait"];++wait.calls;
+-        wait.host_wall_ms+=std::chrono::duration<double,std::milli>(OpClock::now()-begin).count();
+-        for(size_t i=0;i<used;++i){float ms;opCheck(cudaEventElapsedTime(&ms,events[i].start,events[i].stop));events[i].stats->gpu_stream_ms+=ms;}
+-        used=0;
+-    }
+-};
+-inline thread_local OperationProfile* activeOperationProfile=nullptr;
+-struct OperationScope {
+-    OperationProfile* p;OpStats* stats=nullptr;OpStats* previous=nullptr;size_t slot=0;bool gpu;OpClock::time_point begin;
+-    OperationScope(const char* name,bool use_gpu):p(activeOperationProfile),gpu(use_gpu){
+-        if(!p)return;
+-        begin=OpClock::now();stats=&p->stats[p->phase+"."+name];++stats->calls;previous=p->current;p->current=stats;
+-        if(gpu){
+-            slot=p->used++;
+-            if(slot==p->events.size()){OpEvent e;opCheck(cudaEventCreate(&e.start));opCheck(cudaEventCreate(&e.stop));p->events.push_back(e);}
+-            p->events[slot].stats=stats;opCheck(cudaEventRecord(p->events[slot].start));
+-        }
+-    }
+-    ~OperationScope(){if(!p)return;if(gpu)cudaEventRecord(p->events[slot].stop);stats->host_wall_ms+=std::chrono::duration<double,std::milli>(OpClock::now()-begin).count();p->current=previous;}
+-};
+-inline void operationPhase(const char* phase){if(activeOperationProfile){activeOperationProfile->flush();activeOperationProfile->phase=phase;}}
+-inline void operationFlush(){if(activeOperationProfile)activeOperationProfile->flush();}
+-inline void operationKernel(){if(activeOperationProfile&&activeOperationProfile->current)++activeOperationProfile->current->explicit_kernels;}
+-inline void operationBlas(){if(activeOperationProfile&&activeOperationProfile->current)++activeOperationProfile->current->cublas_calls;}
+-inline void operationAllocation(size_t count=1){if(activeOperationProfile&&activeOperationProfile->current)activeOperationProfile->current->allocations+=count;}
+-inline void operationFree(size_t count=1){if(activeOperationProfile&&activeOperationProfile->current)activeOperationProfile->current->frees+=count;}
+-inline void operationCopy(size_t bytes){if(activeOperationProfile&&activeOperationProfile->current)activeOperationProfile->current->copy_bytes+=bytes;}
+-#define OP_SCOPE(name,gpu) OperationScope op_scope(name,gpu)
+-#define OP_ALLOCATE(...) do {OperationScope allocation_scope("buffer_allocate",false);operationAllocation();__VA_ARGS__;} while(0)
+-#define OP_FREE(...) do {OperationScope free_scope("buffer_free",false);operationFree();__VA_ARGS__;} while(0)
+-#define OP_KERNEL(name,...) do {OperationScope kernel_scope(name,true);operationKernel();__VA_ARGS__;} while(0)
+-#else
+-inline void operationPhase(const char*){}
+-inline void operationFlush(){}
+-inline void operationKernel(){}
+-inline void operationBlas(){}
+-inline void operationAllocation(size_t=1){}
+-inline void operationFree(size_t=1){}
+-inline void operationCopy(size_t){}
+-#define OP_SCOPE(name,gpu)
+-#define OP_ALLOCATE(...) __VA_ARGS__
+-#define OP_FREE(...) __VA_ARGS__
+-#define OP_KERNEL(name,...) __VA_ARGS__
+-#endif
+--- a/src/engine/engine.cu
++++ b/src/engine/engine.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "benchmark_trace.cuh"
+ #include "engine.cuh"
+ #include "embedding.cuh"
+@@ -49,11 +47,11 @@
+         }
+     };
+     auto cleanup = [&]() {
+-        OP_FREE(cudaFree(gpu_prompt_tokens));
+-        OP_FREE(cudaFree(prompt_hidden));
+-        OP_FREE(cudaFree(gpu_decode_token));
+-        OP_FREE(cudaFree(decode_hidden));
+-        OP_FREE(cudaFree(logits));
++        cudaFree(gpu_prompt_tokens);
++        cudaFree(prompt_hidden);
++        cudaFree(gpu_decode_token);
++        cudaFree(decode_hidden);
++        cudaFree(logits);
+         freeTransformerBuffers(buffers);
+         freeKVCache(cache);
+     };
+@@ -79,16 +77,16 @@
+             }
+         };
+         allocateKVCache(cache, max_seq_len);
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&logits), VOCAB_SIZE * sizeof(float))));
++        check(cudaMalloc(reinterpret_cast<void**>(&logits), VOCAB_SIZE * sizeof(float)));
+         allocateTransformerBuffers(buffers, prompt_len, max_seq_len);
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&prompt_hidden), prompt_len * EMBEDDING_LENGTH * sizeof(__nv_bfloat16))));
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&gpu_prompt_tokens), prompt_len * sizeof(int))));
++        check(cudaMalloc(reinterpret_cast<void**>(&prompt_hidden), prompt_len * EMBEDDING_LENGTH * sizeof(__nv_bfloat16)));
++        check(cudaMalloc(reinterpret_cast<void**>(&gpu_prompt_tokens), prompt_len * sizeof(int)));
+         check(cudaMemcpy(gpu_prompt_tokens, prompt_tokens.data(), prompt_len * sizeof(int), cudaMemcpyHostToDevice));
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&gpu_decode_token), sizeof(int))));
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&decode_hidden), EMBEDDING_LENGTH * sizeof(__nv_bfloat16))));
++        check(cudaMalloc(reinterpret_cast<void**>(&gpu_decode_token), sizeof(int)));
++        check(cudaMalloc(reinterpret_cast<void**>(&decode_hidden), EMBEDDING_LENGTH * sizeof(__nv_bfloat16)));
+ 
+         benchPhaseBegin("prefill");
+-        OP_KERNEL("embedding", embeddingGatherKernel<<<prompt_len, 1024>>>(gpu_prompt_tokens, prompt_hidden, weights.embedding));
++        embeddingGatherKernel<<<prompt_len, 1024>>>(gpu_prompt_tokens, prompt_hidden, weights.embedding);
+         check(cudaGetLastError());
+         int next_token = transformerForward(cublas_handle, prompt_hidden, weights, cache, buffers, logits, prompt_len);
+         check(cudaGetLastError());
+@@ -100,7 +98,7 @@
+                next_token != 128001 && next_token != 128008 && next_token != 128009) {
+             benchPhaseBegin("decode");
+             check(cudaMemcpy(gpu_decode_token, &next_token, sizeof(int), cudaMemcpyHostToDevice));
+-            OP_KERNEL("embedding", embeddingGatherKernel<<<1, 1024>>>(gpu_decode_token, decode_hidden, weights.embedding));
++            embeddingGatherKernel<<<1, 1024>>>(gpu_decode_token, decode_hidden, weights.embedding);
+             check(cudaGetLastError());
+             next_token = decodeForward(cublas_handle, decode_hidden, weights, cache, buffers, logits);
+             check(cudaGetLastError());
+--- a/src/engine/paged_engine.cu
++++ b/src/engine/paged_engine.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "benchmark_trace.cuh"
+ #include "paged_engine.cuh"
+ #include "embedding.cuh"
+@@ -50,11 +48,11 @@
+         }
+     };
+     auto cleanup = [&]() {
+-        OP_FREE(cudaFree(gpu_prompt_tokens));
+-        OP_FREE(cudaFree(prompt_hidden));
+-        OP_FREE(cudaFree(gpu_decode_token));
+-        OP_FREE(cudaFree(decode_hidden));
+-        OP_FREE(cudaFree(logits));
++        cudaFree(gpu_prompt_tokens);
++        cudaFree(prompt_hidden);
++        cudaFree(gpu_decode_token);
++        cudaFree(decode_hidden);
++        cudaFree(logits);
+         freeTransformerBuffers(buffers);
+         if (cache.k_blocks && cache.v_blocks) {
+             freeSequenceBlocks(cache, sequence);
+@@ -83,16 +81,16 @@
+             }
+         };
+         allocatePagedKVCache(cache, (max_seq_len + BLOCK_SIZE - 1) / BLOCK_SIZE);
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&logits), VOCAB_SIZE * sizeof(float))));
++        check(cudaMalloc(reinterpret_cast<void**>(&logits), VOCAB_SIZE * sizeof(float)));
+         allocateTransformerBuffers(buffers, prompt_len, max_seq_len);
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&prompt_hidden), prompt_len * EMBEDDING_LENGTH * sizeof(__nv_bfloat16))));
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&gpu_prompt_tokens), prompt_len * sizeof(int))));
++        check(cudaMalloc(reinterpret_cast<void**>(&prompt_hidden), prompt_len * EMBEDDING_LENGTH * sizeof(__nv_bfloat16)));
++        check(cudaMalloc(reinterpret_cast<void**>(&gpu_prompt_tokens), prompt_len * sizeof(int)));
+         check(cudaMemcpy(gpu_prompt_tokens, prompt_tokens.data(), prompt_len * sizeof(int), cudaMemcpyHostToDevice));
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&gpu_decode_token), sizeof(int))));
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&decode_hidden), EMBEDDING_LENGTH * sizeof(__nv_bfloat16))));
++        check(cudaMalloc(reinterpret_cast<void**>(&gpu_decode_token), sizeof(int)));
++        check(cudaMalloc(reinterpret_cast<void**>(&decode_hidden), EMBEDDING_LENGTH * sizeof(__nv_bfloat16)));
+ 
+         benchPhaseBegin("prefill");
+-        OP_KERNEL("embedding", embeddingGatherKernel<<<prompt_len, 1024>>>(gpu_prompt_tokens, prompt_hidden, weights.embedding));
++        embeddingGatherKernel<<<prompt_len, 1024>>>(gpu_prompt_tokens, prompt_hidden, weights.embedding);
+         check(cudaGetLastError());
+         int next_token = transformerForwardPaged(cublas_handle, prompt_hidden, weights, cache, sequence, buffers, logits, prompt_len);
+         check(cudaGetLastError());
+@@ -104,7 +102,7 @@
+                next_token != 128001 && next_token != 128008 && next_token != 128009) {
+             benchPhaseBegin("decode");
+             check(cudaMemcpy(gpu_decode_token, &next_token, sizeof(int), cudaMemcpyHostToDevice));
+-            OP_KERNEL("embedding", embeddingGatherKernel<<<1, 1024>>>(gpu_decode_token, decode_hidden, weights.embedding));
++            embeddingGatherKernel<<<1, 1024>>>(gpu_decode_token, decode_hidden, weights.embedding);
+             check(cudaGetLastError());
+             next_token = decodeForwardPaged(cublas_handle, decode_hidden, weights, cache, sequence, buffers, logits);
+             check(cudaGetLastError());
+--- a/src/engine/scheduler.cu
++++ b/src/engine/scheduler.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "benchmark_trace.cuh"
+ #include "scheduler.cuh"
+ #include "paged_transformer.cuh"
+@@ -73,18 +71,18 @@
+         freePagedKVCache(cache);
+         freeTransformerBuffers(prefill_buffers);
+         freeTransformerBuffers(decode_buffers);
+-        OP_FREE(cudaFree(hidden));
+-        OP_FREE(cudaFree(gpu_tokens));
+-        OP_FREE(cudaFree(logits));
++        cudaFree(hidden);
++        cudaFree(gpu_tokens);
++        cudaFree(logits);
+     };
+     try {
+         allocatePagedKVCache(cache, max_batch_size * ((max_seq_len + BLOCK_SIZE - 1) / BLOCK_SIZE));
+         allocateTransformerBuffers(prefill_buffers, max_prompt_len, max_seq_len);
+         allocateTransformerBuffers(decode_buffers, max_batch_size, max_batch_size * max_seq_len);
+         int token_capacity = std::max(max_prompt_len, max_batch_size);
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&hidden), static_cast<size_t>(token_capacity) * 2048 * sizeof(__nv_bfloat16))));
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&gpu_tokens), token_capacity * sizeof(int))));
+-        OP_ALLOCATE(check(cudaMalloc(reinterpret_cast<void**>(&logits), static_cast<size_t>(max_batch_size) * VOCAB_SIZE * sizeof(float))));
++        check(cudaMalloc(reinterpret_cast<void**>(&hidden), static_cast<size_t>(token_capacity) * 2048 * sizeof(__nv_bfloat16)));
++        check(cudaMalloc(reinterpret_cast<void**>(&gpu_tokens), token_capacity * sizeof(int)));
++        check(cudaMalloc(reinterpret_cast<void**>(&logits), static_cast<size_t>(max_batch_size) * VOCAB_SIZE * sizeof(float)));
+         int iteration = 0;
+         auto release = [&](int slot) {
+             auto& request = requests[scheduler.active_slots[slot]];
+@@ -114,7 +112,7 @@
+                     int length = static_cast<int>(request.prompt_tokens.size());
+                     benchPhaseBegin("prefill");
+                     check(cudaMemcpy(gpu_tokens, request.prompt_tokens.data(), length * sizeof(int), cudaMemcpyHostToDevice));
+-                    OP_KERNEL("embedding", embeddingGatherKernel<<<length, 1024>>>(gpu_tokens, hidden, weights.embedding));
++                    embeddingGatherKernel<<<length, 1024>>>(gpu_tokens, hidden, weights.embedding);
+                     check(cudaGetLastError());
+                     request.last_token = transformerForwardPaged(cublas_handle, hidden, weights, cache,
+                         request.kv_state, prefill_buffers, logits, length);
+@@ -144,7 +142,7 @@
+             if (!active.empty()) {
+                 benchPhaseBegin("decode");
+                 check(cudaMemcpy(gpu_tokens, tokens.data(), tokens.size() * sizeof(int), cudaMemcpyHostToDevice));
+-                OP_KERNEL("embedding", embeddingGatherKernel<<<active.size(), 1024>>>(gpu_tokens, hidden, weights.embedding));
++                embeddingGatherKernel<<<active.size(), 1024>>>(gpu_tokens, hidden, weights.embedding);
+                 check(cudaGetLastError());
+                 auto generated = decodeBatchPaged(cublas_handle, hidden, weights, cache, sequences, decode_buffers, logits);
+                 for (size_t row = 0; row < active.size(); ++row) {
+--- a/src/model/RoPe.cu
++++ b/src/model/RoPe.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "../../include/rope.cuh"
+ #include <iostream>
+ #include <stdexcept>
+@@ -29,7 +27,6 @@
+ }
+ 
+ void rope(__nv_bfloat16 *input, int num_tokens, int proj_dim, int position_offset) {
+-    OP_SCOPE("rope",true);
+     int num_threads = proj_dim / 2;
+     if (num_threads > 1024)
+     {
+@@ -37,7 +34,6 @@
+         return;
+     }
+ 
+-    operationKernel();
+     ropeKernel<<<num_tokens, num_threads>>>(input, num_tokens, proj_dim, position_offset, nullptr);
+ #ifdef DEBUG
+     cudaError error = cudaGetLastError();
+@@ -49,11 +45,9 @@
+ }
+ 
+ void ropeBatch(__nv_bfloat16* input, int batch_size, int proj_dim, const int* positions) {
+-    OP_SCOPE("rope",true);
+     if (!input || !positions || batch_size < 1 || batch_size > 4 || (proj_dim != 2048 && proj_dim != 512)) {
+         throw std::invalid_argument("Invalid batched RoPE arguments");
+     }
+-    operationKernel();
+     ropeKernel<<<batch_size, proj_dim / 2>>>(input, batch_size, proj_dim, 0, positions);
+     cudaError_t status = cudaGetLastError();
+     if (status != cudaSuccess) {
+--- a/src/model/SiLU.cu
++++ b/src/model/SiLU.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "../../include/silu.cuh"
+ 
+ __global__ void siluKernel(__nv_bfloat16 *a, __nv_bfloat16 *b) {
+@@ -10,7 +8,5 @@
+ }
+ 
+ void silu(__nv_bfloat16 *a, __nv_bfloat16 *b, int num_tokens) {
+-    OP_SCOPE("swiglu",true);
+-    operationKernel();
+     siluKernel<<<num_tokens, 1024>>>(a, b);
+-}
++}
+\ No newline at end of file
+--- a/src/model/argmax.cu
++++ b/src/model/argmax.cu
+@@ -1,105 +1,27 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "benchmark_trace.cuh"
+ #include "argmax.cuh"
+ #include <cuda_runtime.h>
+-#include <math_constants.h>
+ #include <cuda_bf16.h>
+-#include <map>
++#include <vector>
++#include <iostream>
+ #include <stdexcept>
+-
+-namespace {
+-constexpr int ARGMAX_THREADS = 256;
+-constexpr int ARGMAX_BLOCKS = 128;
+-struct Candidate { float value; int index; };
+-
+-__device__ Candidate better(Candidate a, Candidate b) {
+-    return b.value > a.value || (b.value == a.value && b.index < a.index) ? b : a;
+-}
+-
+-__global__ void argmaxPartials(const float* logits, Candidate* partials) {
+-    Candidate best{-CUDART_INF_F, VOCAB_SIZE};
+-    for (int index = blockIdx.x * blockDim.x + threadIdx.x; index < VOCAB_SIZE;
+-         index += blockDim.x * gridDim.x) {
+-        float value = __bfloat162float(__float2bfloat16_rn(logits[index]));
+-        // The original CPU scan ignores NaNs except when token zero is NaN.
+-        if (!isnan(value)) best = better(best, {value, index});
+-    }
+-    __shared__ Candidate values[ARGMAX_THREADS];
+-    values[threadIdx.x] = best;
+-    __syncthreads();
+-    for (int stride = ARGMAX_THREADS / 2; stride; stride /= 2) {
+-        if (threadIdx.x < stride) values[threadIdx.x] = better(values[threadIdx.x], values[threadIdx.x + stride]);
+-        __syncthreads();
+-    }
+-    if (threadIdx.x == 0) partials[blockIdx.x] = values[0];
+-}
+-
+-__global__ void argmaxFinish(const float* logits, const Candidate* partials, int* selected) {
+-    __shared__ Candidate values[ARGMAX_THREADS];
+-    values[threadIdx.x] = threadIdx.x < ARGMAX_BLOCKS ? partials[threadIdx.x] : Candidate{-CUDART_INF_F, VOCAB_SIZE};
+-    __syncthreads();
+-    for (int stride = ARGMAX_THREADS / 2; stride; stride /= 2) {
+-        if (threadIdx.x < stride) values[threadIdx.x] = better(values[threadIdx.x], values[threadIdx.x + stride]);
+-        __syncthreads();
+-    }
+-    if (threadIdx.x == 0) {
+-        // CPU initializes its running maximum from token zero. If that is NaN,
+-        // every subsequent strict greater-than comparison is false: return zero.
+-        selected[0] = isnan(__bfloat162float(__float2bfloat16_rn(logits[0]))) ? 0 : values[0].index;
+-    }
+-}
+-
+-struct Workspace {
+-    Candidate* partials = nullptr;
+-    int device = -1;
+-    ~Workspace() {
+-        if (!partials) return;
+-        int current = device;
+-        cudaGetDevice(&current);
+-        if (current != device) cudaSetDevice(device);
+-        cudaFree(partials);
+-        if (current != device) cudaSetDevice(current);
+-    }
+-};
+-
+-Workspace& workspace() {
+-    // One allocation per host thread/device, reused across every token and request.
+-    static thread_local std::map<int, Workspace> workspaces;
+-    int device;
+-    benchmarkCheck(cudaGetDevice(&device));
+-    auto& result = workspaces[device];
+-    if (!result.partials) {
+-        OP_SCOPE("argmax_workspace_allocate", false);
+-        operationAllocation();
+-        benchmarkCheck(cudaMalloc(reinterpret_cast<void**>(&result.partials),
+-            ARGMAX_BLOCKS * sizeof(Candidate) + sizeof(int)));
+-        result.device = device;
+-    }
+-    return result;
+-}
+-} // namespace
+ 
+ int argmaxLogits(const float* logits) {
+     benchGpuEnd();
+-    operationFlush();
+-    auto& scratch = workspace();
+-    int* selected = reinterpret_cast<int*>(scratch.partials + ARGMAX_BLOCKS);
+-    {
+-        OP_SCOPE("gpu_greedy_reduction", true);
+-        operationKernel();
+-        argmaxPartials<<<ARGMAX_BLOCKS, ARGMAX_THREADS>>>(logits, scratch.partials);
+-        benchmarkCheck(cudaGetLastError());
+-        operationKernel();
+-        argmaxFinish<<<1, ARGMAX_THREADS>>>(logits, scratch.partials, selected);
+-        benchmarkCheck(cudaGetLastError());
++    std::vector<float> logits_cpu(VOCAB_SIZE);
++    cudaError_t status = cudaMemcpy(logits_cpu.data(), logits, VOCAB_SIZE * sizeof(float), cudaMemcpyDeviceToHost);
++    if (status != cudaSuccess) {
++        throw std::runtime_error(cudaGetErrorString(status));
+     }
+-    operationFlush();
+-    int token;
+-    {
+-        OP_SCOPE("token_d2h", true);
+-        operationCopy(sizeof(int));
+-        benchmarkCheck(cudaMemcpy(&token, selected, sizeof(int), cudaMemcpyDeviceToHost));
++    float max_logit = __bfloat162float(__float2bfloat16_rn(logits_cpu[0]));
++    int max_token_idx = 0;
++    for (int token_idx = 1; token_idx < VOCAB_SIZE; ++token_idx) {
++      float logit = __bfloat162float(__float2bfloat16_rn(logits_cpu[token_idx]));
++      if (logit > max_logit) {
++        max_logit = logit;
++        max_token_idx = token_idx;
++      }
+     }
+-    return token;
++
++    return max_token_idx;
+ }
+--- a/src/model/attention.cu
++++ b/src/model/attention.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "../../include/attention.cuh"
+ #include <iostream>
+ 
+@@ -8,7 +6,6 @@
+ constexpr int EMBEDDING_LENGTH = 2048;
+ 
+ void computeAttentionScores(cublasHandle_t cublas_handle, __nv_bfloat16* q_proj, __nv_bfloat16* k_proj_layer, __nv_bfloat16* attn_scores, int num_tokens) {
+-    OP_SCOPE("attention_scores",true);
+     constexpr int GQA_Q_TO_K_RATIO = 4;
+     constexpr int HEAD_DIM = 64;
+ 
+@@ -20,7 +17,6 @@
+         __nv_bfloat16* q_head = q_proj + head * HEAD_DIM;
+         __nv_bfloat16* k_head = k_proj_layer + k_head_idx * HEAD_DIM;
+         __nv_bfloat16* attn_score_head = attn_scores + num_tokens * num_tokens * head;
+-    operationBlas();
+         cublasStatus_t status = cublasGemmEx(
+             cublas_handle,
+             CUBLAS_OP_T,
+@@ -51,7 +47,6 @@
+ }
+ 
+ void computeDecodeAttentionScores(cublasHandle_t cublas_handle, const __nv_bfloat16* q_proj, const __nv_bfloat16* k_cache_layer, __nv_bfloat16* attn_scores, int total_seq_len, int score_stride) {
+-    OP_SCOPE("attention_scores",true);
+     if (score_stride == 0) score_stride = total_seq_len;
+     constexpr int GQA_Q_TO_K_RATIO = 4;
+     constexpr int HEAD_DIM = 64;
+@@ -63,7 +58,6 @@
+         const __nv_bfloat16* q_head = q_proj + head * HEAD_DIM;
+         const __nv_bfloat16* k_head = k_cache_layer + k_head_idx * HEAD_DIM;
+         __nv_bfloat16* attn_score_head = attn_scores + head * score_stride;
+-    operationBlas();
+         cublasStatus_t status = cublasGemmEx(
+             cublas_handle,
+             CUBLAS_OP_T,
+@@ -93,7 +87,6 @@
+ }
+ 
+ void decodeAttentionScoresTimesV(cublasHandle_t cublas_handle, const __nv_bfloat16* attn_scores, const __nv_bfloat16* v_cache_layer, __nv_bfloat16* attention_output, int total_seq_len, int score_stride) {
+-    OP_SCOPE("weighted_v",true);
+     if (score_stride == 0) score_stride = total_seq_len;
+     constexpr int GQA_Q_TO_V_RATIO = 4;
+     constexpr int HEAD_DIM = 64;
+@@ -110,7 +103,6 @@
+ 
+         __nv_bfloat16* output_head = attention_output + head * HEAD_DIM;
+ 
+-    operationBlas();
+         cublasStatus_t status = cublasGemmEx(
+             cublas_handle,
+             CUBLAS_OP_N,
+@@ -142,7 +134,6 @@
+ }
+ 
+ void attentionScoresTimesV(cublasHandle_t cublas_handle, __nv_bfloat16* attn_scores, __nv_bfloat16* v_proj_layer, __nv_bfloat16* attn_scores_v, int num_tokens) {
+-    OP_SCOPE("weighted_v",true);
+     constexpr int GQA_ATTN_SCORES_TO_V_RATIO = 4;
+     constexpr int HEAD_DIM = 64;
+ 
+@@ -159,7 +150,6 @@
+ 
+         __nv_bfloat16* output_attn_head = attn_scores_v + head * HEAD_DIM;
+ 
+-    operationBlas();
+         cublasStatus_t status = cublasGemmEx(
+             cublas_handle,
+             CUBLAS_OP_N,
+@@ -192,10 +182,8 @@
+ }
+ 
+ void outputProjection(cublasHandle_t cublas_handle, __nv_bfloat16* attention_output, __nv_bfloat16* w_o, __nv_bfloat16* output, int num_tokens) {
+-    OP_SCOPE("o_projection",true);
+-    const float alpha = 1.0f;
+-    const float beta = 0.0f;
+-    operationBlas();
++    const float alpha = 1.0f;
++    const float beta = 0.0f;
+     cublasStatus_t status = cublasGemmEx(
+         cublas_handle,
+         CUBLAS_OP_T,
+@@ -224,11 +212,9 @@
+ }
+ 
+ void qProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+-    OP_SCOPE("q_projection",true);
+-    const float alpha = 1.0f;
+-    const float beta = 0.0f;
+-
+-    operationBlas();
++    const float alpha = 1.0f;
++    const float beta = 0.0f;
++
+     cublasStatus_t status = cublasGemmEx(
+         cublas_handle,
+         CUBLAS_OP_T,
+@@ -257,11 +243,9 @@
+ }
+ 
+ void kProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+-    OP_SCOPE("k_projection",true);
+-    const float alpha = 1.0f;
+-    const float beta = 0.0f;
+-
+-    operationBlas();
++    const float alpha = 1.0f;
++    const float beta = 0.0f;
++
+     cublasStatus_t status = cublasGemmEx(
+         cublas_handle,
+         CUBLAS_OP_T,
+@@ -290,11 +274,9 @@
+ }
+ 
+ void vProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+-    OP_SCOPE("v_projection",true);
+-    const float alpha = 1.0f;
+-    const float beta = 0.0f;
+-
+-    operationBlas();
++    const float alpha = 1.0f;
++    const float beta = 0.0f;
++
+     cublasStatus_t status = cublasGemmEx(
+         cublas_handle,
+         CUBLAS_OP_T,
+--- a/src/model/kvcache.cu
++++ b/src/model/kvcache.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "kvcache.cuh"
+ #include <cuda_runtime.h>
+ #include <stdexcept>
+@@ -8,8 +6,6 @@
+ constexpr int KV_DIM = 512;
+ 
+ void allocateKVCache(KVCache& cache, int max_seq_len) {
+-    OP_SCOPE("kv_allocate",false);
+-    operationAllocation(2);
+   cache.max_seq_len = max_seq_len;
+   cache.current_seq_len = 0;
+ 
+@@ -25,8 +21,6 @@
+ }
+ 
+ void freeKVCache(KVCache& cache) {
+-    OP_SCOPE("kv_free",false);
+-    operationFree(2);
+   cudaFree(cache.k_cache);
+   cudaFree(cache.v_cache);
+ 
+@@ -38,7 +32,6 @@
+ }
+ 
+ void storeKV(KVCache& cache, int layer, const __nv_bfloat16* k, const __nv_bfloat16* v, int num_tokens) {
+-    OP_SCOPE("kv_store",true);
+   size_t offset = static_cast<size_t>(layer) * cache.max_seq_len * KV_DIM + static_cast<size_t>(cache.current_seq_len) * KV_DIM;
+   size_t copy_size = static_cast<size_t>(num_tokens) * KV_DIM * sizeof(__nv_bfloat16);
+   cudaError_t status = cudaMemcpy(cache.k_cache + offset, k, copy_size, cudaMemcpyDeviceToDevice);
+@@ -49,4 +42,4 @@
+   if (status != cudaSuccess) {
+     throw std::runtime_error(cudaGetErrorString(status));
+   }
+-}
++}
+\ No newline at end of file
+--- a/src/model/lm_head.cu
++++ b/src/model/lm_head.cu
+@@ -1,16 +1,12 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "lm_head.cuh"
+ #include <iostream>
+ constexpr int VOCAB_SIZE = 128256;
+ constexpr int EMBEDDING_LENGTH = 2048;
+ 
+ void lmHeadProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* final_hidden, const __nv_bfloat16* embedding_weights, float* logits) {
+-    OP_SCOPE("lm_head",true);
+     const float alpha = 1.0f;
+     const float beta = 0.0f;
+ 
+-    operationBlas();
+     cublasStatus_t status = cublasGemmEx(
+         cublas_handle,
+         CUBLAS_OP_T,
+--- a/src/model/mlp.cu
++++ b/src/model/mlp.cu
+@@ -1,15 +1,11 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "../../include/mlp.cuh"
+ #include <iostream>
+ 
+ constexpr int EMBEDDING_LENGTH = 2048;
+ constexpr int MLP_DIM = 8192;
+ void gateProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+-    OP_SCOPE("gate_projection",true);
+   const float alpha = 1.0f;
+   const float beta = 0.0f;
+-    operationBlas();
+   cublasStatus_t status = cublasGemmEx(
+       cublas_handle,
+       CUBLAS_OP_T,
+@@ -38,10 +34,8 @@
+ }
+ 
+ void upProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+-    OP_SCOPE("up_projection",true);
+   const float alpha = 1.0f;
+   const float beta = 0.0f;
+-    operationBlas();
+   cublasStatus_t status = cublasGemmEx(
+       cublas_handle,
+       CUBLAS_OP_T,
+@@ -70,10 +64,8 @@
+ }
+ 
+ void downProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+-    OP_SCOPE("down_projection",true);
+   const float alpha = 1.0f;
+   const float beta = 0.0f;
+-    operationBlas();
+   cublasStatus_t status = cublasGemmEx(
+       cublas_handle,
+       CUBLAS_OP_T,
+--- a/src/model/paged_attention.cu
++++ b/src/model/paged_attention.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "benchmark_trace.cuh"
+ #include "paged_attention.cuh"
+ #include "attention.cuh"
+@@ -18,8 +16,6 @@
+ }
+ 
+ void freePagedBatch(PagedBatchMetadata& metadata) {
+-    OP_SCOPE("metadata_free",false);
+-    operationFree(4);
+     cudaFree(metadata.block_tables);
+     cudaFree(metadata.positions);
+     cudaFree(metadata.linear_k);
+@@ -29,8 +25,6 @@
+ 
+ void preparePagedBatch(PagedKVCache& cache, const std::vector<SequenceKVState*>& sequences,
+                        PagedBatchMetadata& metadata) {
+-    OP_SCOPE("metadata_allocate_upload",false);
+-    operationAllocation(4);
+     if (!cache.k_blocks || !cache.v_blocks || cache.num_blocks <= 0 || cache.block_size != BLOCK_SIZE ||
+         sequences.empty() || sequences.size() > 4 || metadata.block_tables || metadata.positions || metadata.linear_k || metadata.linear_v) {
+         throw std::invalid_argument("Invalid paged decode batch");
+@@ -122,9 +116,7 @@
+ 
+ void storePagedKVBatch(PagedKVCache& cache, const PagedBatchMetadata& metadata,
+                        int layer, const __nv_bfloat16* k, const __nv_bfloat16* v) {
+-    OP_SCOPE("kv_store",true);
+     validatePagedAttention(cache, metadata, layer);
+-    operationKernel();
+     storePagedKVBatchKernel<<<metadata.batch_size, KV_DIM>>>(cache.k_blocks, cache.v_blocks, cache.num_blocks,
+         layer, metadata.block_tables, metadata.positions, k, v);
+     checkPagedAttentionCUDA(cudaGetLastError());
+@@ -134,9 +126,8 @@
+                                  const PagedBatchMetadata& metadata, int layer, __nv_bfloat16* scores) {
+     validatePagedAttention(cache, metadata, layer);
+     dim3 grid((metadata.score_stride * KV_DIM + 255) / 256, metadata.batch_size);
+-    { OP_SCOPE("kv_gather",true); operationKernel();
+     gatherPagedKernel<<<grid, 256>>>(cache.k_blocks, cache.num_blocks, layer, metadata.block_tables,
+-        metadata.positions, metadata.score_stride, metadata.linear_k); }
++        metadata.positions, metadata.score_stride, metadata.linear_k);
+     checkPagedAttentionCUDA(cudaGetLastError());
+     for (int row = 0; row < metadata.batch_size; ++row) {
+         computeDecodeAttentionScores(handle, q + row * 2048,
+@@ -149,9 +140,8 @@
+                                const PagedBatchMetadata& metadata, int layer, __nv_bfloat16* attention_output) {
+     validatePagedAttention(cache, metadata, layer);
+     dim3 grid((metadata.score_stride * KV_DIM + 255) / 256, metadata.batch_size);
+-    { OP_SCOPE("kv_gather",true); operationKernel();
+     gatherPagedKernel<<<grid, 256>>>(cache.v_blocks, cache.num_blocks, layer, metadata.block_tables,
+-        metadata.positions, metadata.score_stride, metadata.linear_v); }
++        metadata.positions, metadata.score_stride, metadata.linear_v);
+     checkPagedAttentionCUDA(cudaGetLastError());
+     for (int row = 0; row < metadata.batch_size; ++row) {
+         decodeAttentionScoresTimesV(handle, scores + row * NUM_Q_HEADS * metadata.score_stride,
+--- a/src/model/paged_kvcache.cu
++++ b/src/model/paged_kvcache.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "paged_kvcache.cuh"
+ #include <cuda_runtime.h>
+ #include <algorithm>
+@@ -35,8 +33,6 @@
+ }
+ 
+ void allocatePagedKVCache(PagedKVCache& cache, int num_blocks) {
+-    OP_SCOPE("kv_allocate",false);
+-    operationAllocation(2);
+     if (cache.k_blocks || cache.v_blocks || cache.num_blocks != 0 || !cache.free_blocks.empty()) {
+         throw std::invalid_argument("Paged cache already owns storage");
+     }
+@@ -62,8 +58,6 @@
+ }
+ 
+ void freePagedKVCache(PagedKVCache& cache) {
+-    OP_SCOPE("kv_free",false);
+-    operationFree(2);
+     cudaFree(cache.k_blocks);
+     cudaFree(cache.v_blocks);
+     cache = PagedKVCache{};
+@@ -118,7 +112,6 @@
+ 
+ void storePagedKV(PagedKVCache& cache, SequenceKVState& sequence, int layer,
+                   const __nv_bfloat16* k, const __nv_bfloat16* v, int num_tokens) {
+-    OP_SCOPE("kv_store",true);
+     if (layer < 0 || layer >= NUM_LAYERS || num_tokens <= 0 || !k || !v ||
+         sequence.current_seq_len < 0 || sequence.current_seq_len > 1024 || num_tokens > 1024 - sequence.current_seq_len) {
+         throw std::invalid_argument("Invalid paged KV store");
+--- a/src/model/paged_transformer.cu
++++ b/src/model/paged_transformer.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include <cuda_bf16.h>
+ #include "numerical_trace.cuh"
+ #include "paged_transformer.cuh"
+@@ -27,7 +25,7 @@
+   }
+   reserveSequenceBlocks(cache, sequence, num_tokens);
+   for (int layer = 0; layer < NUM_LAYERS; ++layer) {
+-    OP_KERNEL("rmsnorm", rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].input_norm));
++    rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].input_norm);
+     qProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_q, buffers.q, num_tokens);
+     kProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_k, buffers.k, num_tokens);
+     vProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_v, buffers.v, num_tokens);
+@@ -40,7 +38,7 @@
+     attentionScoresTimesV(cublas_handle, buffers.attn_scores, buffers.v, buffers.attn_output, num_tokens);
+     outputProjection(cublas_handle, buffers.attn_output, weights.layers[layer].w_o, buffers.o_output, num_tokens);
+     residualAdd(hidden_states, buffers.o_output, num_tokens);
+-    OP_KERNEL("rmsnorm", rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].post_attention_norm));
++    rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].post_attention_norm);
+     gateProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_gate, buffers.gate, num_tokens);
+     upProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_up, buffers.up, num_tokens);
+     silu(buffers.gate, buffers.up, num_tokens);
+@@ -48,7 +46,7 @@
+     residualAdd(hidden_states, buffers.down, num_tokens);
+   }
+   sequence.current_seq_len += num_tokens;
+-  OP_KERNEL("rmsnorm", rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.final_norm));
++  rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.final_norm);
+   __nv_bfloat16* last_hidden = buffers.rms_output + (num_tokens - 1) * EMBEDDING_LENGTH;
+   lmHeadProjection(cublas_handle, last_hidden, weights.embedding, logits);
+   int next_token = argmaxLogits(logits);
+@@ -65,7 +63,7 @@
+         preparePagedBatch(cache, sequences, metadata);
+         int batch_size = metadata.batch_size;
+         for (int layer = 0; layer < NUM_LAYERS; ++layer) {
+-            OP_KERNEL("rmsnorm", rmsNormKernel<<<batch_size, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].input_norm));
++            rmsNormKernel<<<batch_size, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].input_norm);
+             traceBF16(layer, "input_norm", buffers.rms_output + numericalTraceRow * 2048, 2048);
+             // Row-stable cuBLAS shape preserves the validated BF16 rounding contract.
+             for (int row = 0; row < batch_size; ++row)
+@@ -98,7 +96,7 @@
+             traceBF16(layer, "output_projection", buffers.o_output + numericalTraceRow * 2048, 2048);
+             residualAdd(hidden_states, buffers.o_output, batch_size);
+             traceBF16(layer, "attention_residual", hidden_states + numericalTraceRow * 2048, 2048);
+-            OP_KERNEL("rmsnorm", rmsNormKernel<<<batch_size, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].post_attention_norm));
++            rmsNormKernel<<<batch_size, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].post_attention_norm);
+             traceBF16(layer, "post_attention_norm", buffers.rms_output + numericalTraceRow * 2048, 2048);
+             for (int row = 0; row < batch_size; ++row)
+                 gateProjection(cublas_handle, buffers.rms_output + row * 2048, weights.layers[layer].w_gate, buffers.gate + row * 8192, 1);
+@@ -114,7 +112,7 @@
+             residualAdd(hidden_states, buffers.down, batch_size);
+             traceBF16(layer, "mlp_residual", hidden_states + numericalTraceRow * 2048, 2048);
+         }
+-        OP_KERNEL("rmsnorm", rmsNormKernel<<<batch_size, 1024>>>(hidden_states, buffers.rms_output, weights.final_norm));
++        rmsNormKernel<<<batch_size, 1024>>>(hidden_states, buffers.rms_output, weights.final_norm);
+         traceBF16(16, "final_norm", buffers.rms_output + numericalTraceRow * 2048, 2048);
+         for (int row = 0; row < batch_size; ++row)
+             lmHeadProjection(cublas_handle, buffers.rms_output + row * EMBEDDING_LENGTH,
+--- a/src/model/resConnection.cu
++++ b/src/model/resConnection.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "../../include/residual.cuh"
+ #include <iostream>
+ 
+@@ -10,8 +8,6 @@
+ }
+ 
+ void residualAdd(__nv_bfloat16 *input, __nv_bfloat16 *input_embeds, int num_tokens) {
+-    OP_SCOPE("residual",true);
+-    operationKernel();
+     residualKernel<<<num_tokens, 1024>>>(input, input_embeds);
+ #ifdef DEBUG
+     cudaError error = cudaGetLastError();
+--- a/src/model/softmax.cu
++++ b/src/model/softmax.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include "softmax.cuh"
+ #include <iostream>
+ 
+@@ -45,7 +43,6 @@
+ }
+ 
+ void softmaxRows(__nv_bfloat16* input, int num_rows, int row_length) {
+-    OP_SCOPE("softmax",true);
+     if (row_length > 1024) {
+         std::cout
+             << "Softmax row length exceeds 1024; kernel not launched"
+@@ -53,7 +50,6 @@
+         return;
+     }
+ 
+-    operationKernel();
+     softmaxKernel<<<num_rows, row_length>>>(
+         input,
+         row_length
+--- a/src/model/transformer.cu
++++ b/src/model/transformer.cu
+@@ -1,5 +1,3 @@
+-#include <cstddef>
+-#include "operation_profile.cuh"
+ #include <cuda_bf16.h>
+ #include "numerical_trace.cuh"
+ #include "../../include/transformer.cuh"
+@@ -27,9 +25,7 @@
+ 
+ 
+ void allocateTransformerBuffers(TransformerBuffers& buffers, int num_tokens, int max_seq_len) {
+-    OP_SCOPE("workspace_allocate",false);
+   auto allocate = [](void** pointer, size_t bytes) {
+-    operationAllocation();
+     cudaError_t status = cudaMalloc(pointer, bytes);
+     if (status != cudaSuccess) {
+       throw std::runtime_error(cudaGetErrorString(status));
+@@ -69,8 +65,6 @@
+ }
+ 
+ void freeTransformerBuffers(TransformerBuffers& buffers) {
+-    OP_SCOPE("workspace_free",false);
+-    operationFree(11);
+     cudaFree(buffers.rms_output);
+     cudaFree(buffers.q);
+     cudaFree(buffers.k);
+@@ -98,7 +92,7 @@
+ 
+ int transformerForward(cublasHandle_t cublas_handle, __nv_bfloat16* hidden_states, const ModelWeights& weights, KVCache& cache, TransformerBuffers& buffers, float* logits, int num_tokens) {
+   for (int layer = 0; layer < NUM_LAYERS; ++layer) {
+-    OP_KERNEL("rmsnorm", rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].input_norm));
++    rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].input_norm);
+     qProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_q, buffers.q, num_tokens);
+     kProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_k, buffers.k, num_tokens);
+     vProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_v, buffers.v, num_tokens);
+@@ -111,7 +105,7 @@
+     attentionScoresTimesV(cublas_handle, buffers.attn_scores, buffers.v, buffers.attn_output, num_tokens);
+     outputProjection(cublas_handle, buffers.attn_output, weights.layers[layer].w_o, buffers.o_output, num_tokens);
+     residualAdd(hidden_states, buffers.o_output, num_tokens);
+-    OP_KERNEL("rmsnorm", rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].post_attention_norm));
++    rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].post_attention_norm);
+     gateProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_gate, buffers.gate, num_tokens);
+     upProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_up, buffers.up, num_tokens);
+     silu(buffers.gate, buffers.up, num_tokens);
+@@ -119,7 +113,7 @@
+     residualAdd(hidden_states, buffers.down, num_tokens);
+   }
+   cache.current_seq_len += num_tokens;
+-  OP_KERNEL("rmsnorm", rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.final_norm));
++  rmsNormKernel<<<num_tokens, 1024>>>(hidden_states, buffers.rms_output, weights.final_norm);
+   __nv_bfloat16* last_hidden = buffers.rms_output + (num_tokens - 1) * EMBEDDING_LENGTH;
+   lmHeadProjection(cublas_handle, last_hidden, weights.embedding, logits);
+   int next_token = argmaxLogits(logits);
+@@ -131,7 +125,7 @@
+     int total_seq_len = cache.current_seq_len + 1;
+ 
+     for (int layer = 0; layer < NUM_LAYERS; ++layer) {
+-        OP_KERNEL("rmsnorm", rmsNormKernel<<<1, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].input_norm));
++        rmsNormKernel<<<1, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].input_norm);
+         traceBF16(layer, "input_norm", buffers.rms_output, 2048);
+         qProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_q, buffers.q, 1);
+         traceBF16(layer, "q", buffers.q, 2048);
+@@ -156,7 +150,7 @@
+         traceBF16(layer, "output_projection", buffers.o_output, 2048);
+         residualAdd(hidden_states, buffers.o_output, 1);
+         traceBF16(layer, "attention_residual", hidden_states, 2048);
+-        OP_KERNEL("rmsnorm", rmsNormKernel<<<1, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].post_attention_norm));
++        rmsNormKernel<<<1, 1024>>>(hidden_states, buffers.rms_output, weights.layers[layer].post_attention_norm);
+         traceBF16(layer, "post_attention_norm", buffers.rms_output, 2048);
+         gateProjection(cublas_handle, buffers.rms_output, weights.layers[layer].w_gate, buffers.gate, 1);
+         traceBF16(layer, "gate", buffers.gate, 8192);
+@@ -170,7 +164,7 @@
+         traceBF16(layer, "mlp_residual", hidden_states, 2048);
+     }
+     cache.current_seq_len += 1;
+-    OP_KERNEL("rmsnorm", rmsNormKernel<<<1, 1024>>>(hidden_states, buffers.rms_output, weights.final_norm));
++    rmsNormKernel<<<1, 1024>>>(hidden_states, buffers.rms_output, weights.final_norm);
+         traceBF16(16, "final_norm", buffers.rms_output, 2048);
+     lmHeadProjection(cublas_handle, buffers.rms_output, weights.embedding, logits);
+     traceFloat(16, "logits", logits, VOCAB_SIZE);
+--- a/src/python/tokenizer.py
++++ b/src/python/tokenizer.py
+@@ -2,10 +2,10 @@
+ Tokenize text using HuggingFace tokenizers and dump token IDs.
+ 
+ Usage:
+-    python src/python/tokenizer.py "The capital of France is" --model meta-llama/Llama-3.2-1B
+-    python src/python/tokenizer.py --decode --ids 791 6864 315 9822 374 --model meta-llama/Llama-3.2-1B
++    python python/tokenizer.py "The capital of France is" --model meta-llama/Llama-3.2-1B
++    python python/tokenizer.py --decode --ids 791 6864 315 9822 374 --model meta-llama/Llama-3.2-1B
+ 
+-Use --output to write the JSON token array consumed by the C++ engine.
++The C++ engine reads/writes plain text files of token IDs.
+ """
+ 
+ import argparse
+--- a/tests/argmax_test.cu
++++ b/tests/argmax_test.cu
+@@ -4,10 +4,6 @@
+ #include <iostream>
+ #include <stdexcept>
+ #include <vector>
+-#include <cuda_bf16.h>
+-#include <limits>
+-#include <random>
+-#include <cstring>
+ 
+ int main() {
+     float* device = nullptr;
+@@ -37,35 +33,8 @@
+         expect(469);
+         scores[9928] = 16.5626f;
+         expect(9928);
++        cudaFree(device);
+         std::cout << "Five BF16 argmax checks passed\n";
+-        auto reference = [&]() {
+-            float maximum=__bfloat162float(__float2bfloat16_rn(scores[0]));int selected=0;
+-            for(int i=1;i<VOCAB_SIZE;++i){float value=__bfloat162float(__float2bfloat16_rn(scores[i]));if(value>maximum){maximum=value;selected=i;}}
+-            return selected;
+-        };
+-        int extended_checks=0;
+-        auto validate = [&]() { expect(reference()); ++extended_checks; };
+-        const float nan=std::numeric_limits<float>::quiet_NaN();
+-        const float inf=std::numeric_limits<float>::infinity();
+-        std::fill(scores.begin(),scores.end(),-inf);validate();
+-        scores[255]=inf;scores[256]=inf;validate();
+-        scores[0]=nan;validate(); // A first-token NaN must dominate later +Inf.
+-        std::fill(scores.begin(),scores.end(),nan);validate();
+-        scores[0]=-inf;validate();
+-        scores[700]=inf;scores[900]=inf;validate();
+-        scores[0]=std::numeric_limits<float>::signaling_NaN();validate();
+-        std::fill(scores.begin(),scores.end(),-inf);scores[0]=-0.0f;scores[1000]=0.0f;validate();
+-        std::fill(scores.begin(),scores.end(),0.0f);scores[127000]=std::numeric_limits<float>::max();scores[128000]=inf;validate();
+-        uint32_t tiny_bits=0x00010000u;float tiny;std::memcpy(&tiny,&tiny_bits,sizeof(tiny));
+-        std::fill(scores.begin(),scores.end(),-1.0f);scores[0]=0.0f;scores[42]=tiny;validate();
+-        std::fill(scores.begin(),scores.end(),-1.0f);scores[0]=-tiny;scores[42]=-std::numeric_limits<float>::denorm_min();validate();
+-        std::mt19937 rng(20261015);
+-        for(int trial=0;trial<100;++trial){
+-            for(float& value:scores){uint32_t bits=rng();std::memcpy(&value,&bits,sizeof(value));}
+-            validate();
+-        }
+-        cudaFree(device);
+-        std::cout << extended_checks << " extended NaN/Inf/tie/random-bit-pattern argmax checks passed\n";
+     } catch (const std::exception& error) {
+         cudaFree(device);
+         std::cerr << error.what() << '\n';

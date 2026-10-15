@@ -1,0 +1,265 @@
+{
+  "block_reuse_observed": true,
+  "cuda_runtime_error": null,
+  "events": [
+    {
+      "admitted": true,
+      "blocks": [
+        0
+      ],
+      "free_blocks": 23,
+      "iteration": 0,
+      "request_id": 0,
+      "slot": 0
+    },
+    {
+      "admitted": true,
+      "blocks": [
+        1
+      ],
+      "free_blocks": 22,
+      "iteration": 0,
+      "request_id": 1,
+      "slot": 1
+    },
+    {
+      "admitted": true,
+      "blocks": [
+        2
+      ],
+      "free_blocks": 21,
+      "iteration": 0,
+      "request_id": 2,
+      "slot": 2
+    },
+    {
+      "admitted": false,
+      "blocks": [
+        0
+      ],
+      "free_blocks": 22,
+      "iteration": 2,
+      "request_id": 0,
+      "slot": 0
+    },
+    {
+      "admitted": true,
+      "blocks": [
+        0
+      ],
+      "free_blocks": 21,
+      "iteration": 2,
+      "request_id": 3,
+      "slot": 0
+    },
+    {
+      "admitted": false,
+      "blocks": [
+        0,
+        3
+      ],
+      "free_blocks": 22,
+      "iteration": 6,
+      "request_id": 3,
+      "slot": 0
+    },
+    {
+      "admitted": false,
+      "blocks": [
+        1
+      ],
+      "free_blocks": 23,
+      "iteration": 6,
+      "request_id": 1,
+      "slot": 1
+    },
+    {
+      "admitted": true,
+      "blocks": [
+        1
+      ],
+      "free_blocks": 22,
+      "iteration": 6,
+      "request_id": 4,
+      "slot": 1
+    },
+    {
+      "admitted": true,
+      "blocks": [
+        3
+      ],
+      "free_blocks": 21,
+      "iteration": 6,
+      "request_id": 5,
+      "slot": 0
+    },
+    {
+      "admitted": false,
+      "blocks": [
+        3
+      ],
+      "free_blocks": 22,
+      "iteration": 9,
+      "request_id": 5,
+      "slot": 0
+    },
+    {
+      "admitted": false,
+      "blocks": [
+        2
+      ],
+      "free_blocks": 23,
+      "iteration": 10,
+      "request_id": 2,
+      "slot": 2
+    },
+    {
+      "admitted": false,
+      "blocks": [
+        1,
+        2
+      ],
+      "free_blocks": 24,
+      "iteration": 14,
+      "request_id": 4,
+      "slot": 1
+    }
+  ],
+  "passed": true,
+  "requests": [
+    {
+      "continuous": [
+        12366,
+        13,
+        578
+      ],
+      "first_mismatch": -1,
+      "request_id": 0,
+      "single_paged": [
+        12366,
+        13,
+        578
+      ],
+      "text": "The capital of France is"
+    },
+    {
+      "continuous": [
+        3116,
+        13,
+        1115,
+        374,
+        264,
+        6913,
+        35884
+      ],
+      "first_mismatch": -1,
+      "request_id": 1,
+      "single_paged": [
+        3116,
+        13,
+        1115,
+        374,
+        264,
+        6913,
+        35884
+      ],
+      "text": "Two plus two equals"
+    },
+    {
+      "continuous": [
+        262,
+        3270,
+        262,
+        1115,
+        734,
+        27983,
+        279,
+        1176,
+        308,
+        5219,
+        304
+      ],
+      "first_mismatch": -1,
+      "request_id": 2,
+      "single_paged": [
+        262,
+        3270,
+        262,
+        1115,
+        734,
+        27983,
+        279,
+        1176,
+        308,
+        5219,
+        304
+      ],
+      "text": "def fibonacci(n):\n"
+    },
+    {
+      "continuous": [
+        578,
+        13863,
+        574,
+        10409,
+        449
+      ],
+      "first_mismatch": -1,
+      "request_id": 3,
+      "single_paged": [
+        578,
+        13863,
+        574,
+        10409,
+        449
+      ],
+      "text": "Once upon a time, a small robot discovered a garden."
+    },
+    {
+      "continuous": [
+        578,
+        13180,
+        8111,
+        6437,
+        1606,
+        315,
+        264,
+        25885,
+        2663
+      ],
+      "first_mismatch": -1,
+      "request_id": 4,
+      "single_paged": [
+        578,
+        13180,
+        8111,
+        6437,
+        1606,
+        315,
+        264,
+        25885,
+        2663
+      ],
+      "text": "Explain why the sky looks blue."
+    },
+    {
+      "continuous": [
+        50789,
+        13,
+        1102,
+        374
+      ],
+      "first_mismatch": -1,
+      "request_id": 5,
+      "single_paged": [
+        50789,
+        13,
+        1102,
+        374
+      ],
+      "text": "The largest planet in our solar system is"
+    }
+  ],
+  "stage": "batch",
+  "zero_and_one_token_requests_passed": true
+}

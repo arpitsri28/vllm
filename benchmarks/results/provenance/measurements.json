@@ -1,0 +1,82 @@
+{
+  "files": [
+    {
+      "path": "benchmarks/results/measurements/contiguous/full.jsonl",
+      "original_path": "benchmarks/results/full.jsonl",
+      "sha256": "48d483062e0b62282de1621c92f83ac745f70f0623af0a3534aae80dd739d0da",
+      "bytes": 160809,
+      "role": "measured benchmark"
+    },
+    {
+      "path": "benchmarks/results/measurements/contiguous/hf.jsonl",
+      "original_path": "benchmarks/results/hf.jsonl",
+      "sha256": "050c05ab0802c9bc96074e802165bfc130229557b267bb082afa0a7435db773f",
+      "bytes": 18925,
+      "role": "exploratory HF baseline; no framework speedup claim"
+    },
+    {
+      "path": "benchmarks/results/measurements/contiguous/smoke.jsonl",
+      "original_path": "benchmarks/results/smoke.jsonl",
+      "sha256": "ca1ac23c2e3015d2db2745eea4edaf33a8944c1cb1883ed0c6e114785ac2da5d",
+      "bytes": 18268,
+      "role": "measured benchmark"
+    },
+    {
+      "path": "benchmarks/results/measurements/numerical/batching.jsonl",
+      "original_path": "benchmarks/batching_results/batching.jsonl",
+      "sha256": "6307977869ed67e4cd0b1c11914427f0748785d536492e14344ca35bd8f23dc8",
+      "bytes": 87350,
+      "role": "measured benchmark"
+    },
+    {
+      "path": "benchmarks/results/measurements/numerical/contiguous_regression.jsonl",
+      "original_path": "benchmarks/batching_results/contiguous_regression.jsonl",
+      "sha256": "9ae3c23b28b084d219579432376f8e5105710753cd97530f1444dd6f2d9a56d9",
+      "bytes": 15898,
+      "role": "measured benchmark"
+    },
+    {
+      "path": "benchmarks/results/measurements/optimization/after/batching.jsonl",
+      "original_path": "benchmarks/optimization_results/after/batching.jsonl",
+      "sha256": "55c8b89354c5c68f1b04493b9c936c781f4f179916e6c180c26520529b59cc4c",
+      "bytes": 87254,
+      "role": "measured benchmark"
+    },
+    {
+      "path": "benchmarks/results/measurements/optimization/after/primary.jsonl",
+      "original_path": "benchmarks/optimization_results/after/primary.jsonl",
+      "sha256": "7c59caad41d1efea95c0d4e9c870d49fe9e86eae55292692ac809fa990b3c52f",
+      "bytes": 31054,
+      "role": "measured benchmark"
+    },
+    {
+      "path": "benchmarks/results/measurements/optimization/before/batching.jsonl",
+      "original_path": "benchmarks/optimization_results/before/batching.jsonl",
+      "sha256": "c00a5a9abe02b79bd9e6734db56aeb9c8d0ae25fb0f2dbf8f2305c3b57d7028d",
+      "bytes": 87363,
+      "role": "measured benchmark"
+    },
+    {
+      "path": "benchmarks/results/measurements/optimization/before/ncu-run.jsonl",
+      "original_path": "benchmarks/optimization_results/before/ncu-run.jsonl",
+      "sha256": "aa8f67fa25e96b7d9bc62b10c25bd34398c90bb9e4a592f372e6ad55dc6a3e6d",
+      "bytes": 3829,
+      "role": "excluded hardware-counter probe"
+    },
+    {
+      "path": "benchmarks/results/measurements/optimization/before/primary.jsonl",
+      "original_path": "benchmarks/optimization_results/before/primary.jsonl",
+      "sha256": "6f12189c820ebeebef158c255b9cce25c8e0d0a03ba848b6c81ee0c29b3f62bb",
+      "bytes": 31111,
+      "role": "measured benchmark"
+    },
+    {
+      "path": "benchmarks/results/measurements/optimization/control_primary.jsonl",
+      "original_path": "benchmarks/optimization_results/control_primary.jsonl",
+      "sha256": "1d2236476cc25290d7b7a0895d0260679e28e579b5848f15b010cbf53b04d793",
+      "bytes": 15908,
+      "role": "measured benchmark"
+    }
+  ],
+  "total_bytes": 557769
+}

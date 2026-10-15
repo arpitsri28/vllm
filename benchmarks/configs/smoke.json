@@ -1,0 +1,50 @@
+{
+  "prompts_file": "benchmarks/prompts.json",
+  "max_seq_len": 1024,
+  "seed": 0,
+  "eos_policy": "preserve engine EOS stopping; incomplete runs excluded",
+  "warmups": 2,
+  "repetitions": 5,
+  "cases": [
+    {
+      "mode": "contiguous",
+      "prompt_tokens": 256,
+      "output_tokens": 128,
+      "batch_size": 1
+    },
+    {
+      "mode": "paged",
+      "prompt_tokens": 256,
+      "output_tokens": 128,
+      "batch_size": 1,
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+    },
+    {
+      "mode": "batch",
+      "prompt_tokens": 128,
+      "output_tokens": 128,
+      "batch_size": 1,
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+    },
+    {
+      "mode": "batch",
+      "prompt_tokens": 128,
+      "output_tokens": 128,
+      "batch_size": 2,
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+    },
+    {
+      "mode": "batch",
+      "prompt_tokens": 128,
+      "output_tokens": 128,
+      "batch_size": 4,
+      "skip_reason": "Correctness gate failed: paged-vs-contiguous generation and batch-vs-single-paged output agreement"
+    },
+    {
+      "mode": "batch",
+      "prompt_tokens": 128,
+      "output_tokens": 128,
+      "batch_size": 8
+    }
+  ]
+}

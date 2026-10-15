@@ -1,3 +1,5 @@
+#include <cstddef>
+#include "operation_profile.cuh"
 #include "../../include/attention.cuh"
 #include <iostream>
 
@@ -6,6 +8,7 @@ constexpr int KV_DIM = 512;
 constexpr int EMBEDDING_LENGTH = 2048;
 
 void computeAttentionScores(cublasHandle_t cublas_handle, __nv_bfloat16* q_proj, __nv_bfloat16* k_proj_layer, __nv_bfloat16* attn_scores, int num_tokens) {
+    OP_SCOPE("attention_scores",true);
     constexpr int GQA_Q_TO_K_RATIO = 4;
     constexpr int HEAD_DIM = 64;
 
@@ -17,6 +20,7 @@ void computeAttentionScores(cublasHandle_t cublas_handle, __nv_bfloat16* q_proj,
         __nv_bfloat16* q_head = q_proj + head * HEAD_DIM;
         __nv_bfloat16* k_head = k_proj_layer + k_head_idx * HEAD_DIM;
         __nv_bfloat16* attn_score_head = attn_scores + num_tokens * num_tokens * head;
+    operationBlas();
         cublasStatus_t status = cublasGemmEx(
             cublas_handle,
             CUBLAS_OP_T,
@@ -46,7 +50,9 @@ void computeAttentionScores(cublasHandle_t cublas_handle, __nv_bfloat16* q_proj,
     }
 }
 
-void computeDecodeAttentionScores(cublasHandle_t cublas_handle, const __nv_bfloat16* q_proj, const __nv_bfloat16* k_cache_layer, __nv_bfloat16* attn_scores, int total_seq_len) {
+void computeDecodeAttentionScores(cublasHandle_t cublas_handle, const __nv_bfloat16* q_proj, const __nv_bfloat16* k_cache_layer, __nv_bfloat16* attn_scores, int total_seq_len, int score_stride) {
+    OP_SCOPE("attention_scores",true);
+    if (score_stride == 0) score_stride = total_seq_len;
     constexpr int GQA_Q_TO_K_RATIO = 4;
     constexpr int HEAD_DIM = 64;
 
@@ -56,7 +62,8 @@ void computeDecodeAttentionScores(cublasHandle_t cublas_handle, const __nv_bfloa
         int k_head_idx = head / GQA_Q_TO_K_RATIO;
         const __nv_bfloat16* q_head = q_proj + head * HEAD_DIM;
         const __nv_bfloat16* k_head = k_cache_layer + k_head_idx * HEAD_DIM;
-        __nv_bfloat16* attn_score_head = attn_scores + head * total_seq_len;
+        __nv_bfloat16* attn_score_head = attn_scores + head * score_stride;
+    operationBlas();
         cublasStatus_t status = cublasGemmEx(
             cublas_handle,
             CUBLAS_OP_T,
@@ -85,7 +92,9 @@ void computeDecodeAttentionScores(cublasHandle_t cublas_handle, const __nv_bfloa
     }
 }
 
-void decodeAttentionScoresTimesV(cublasHandle_t cublas_handle, const __nv_bfloat16* attn_scores, const __nv_bfloat16* v_cache_layer, __nv_bfloat16* attention_output, int total_seq_len) {
+void decodeAttentionScoresTimesV(cublasHandle_t cublas_handle, const __nv_bfloat16* attn_scores, const __nv_bfloat16* v_cache_layer, __nv_bfloat16* attention_output, int total_seq_len, int score_stride) {
+    OP_SCOPE("weighted_v",true);
+    if (score_stride == 0) score_stride = total_seq_len;
     constexpr int GQA_Q_TO_V_RATIO = 4;
     constexpr int HEAD_DIM = 64;
 
@@ -94,13 +103,14 @@ void decodeAttentionScoresTimesV(cublasHandle_t cublas_handle, const __nv_bfloat
 
     for (int head = 0; head < NUM_Q_HEADS; ++head) {
         int v_head_idx = head / GQA_Q_TO_V_RATIO;
-        const __nv_bfloat16* attn_scores_head = attn_scores + head * total_seq_len;
+        const __nv_bfloat16* attn_scores_head = attn_scores + head * score_stride;
 
 
         const __nv_bfloat16* v_head = v_cache_layer + v_head_idx * HEAD_DIM;
 
         __nv_bfloat16* output_head = attention_output + head * HEAD_DIM;
 
+    operationBlas();
         cublasStatus_t status = cublasGemmEx(
             cublas_handle,
             CUBLAS_OP_N,
@@ -132,6 +142,7 @@ void decodeAttentionScoresTimesV(cublasHandle_t cublas_handle, const __nv_bfloat
 }
 
 void attentionScoresTimesV(cublasHandle_t cublas_handle, __nv_bfloat16* attn_scores, __nv_bfloat16* v_proj_layer, __nv_bfloat16* attn_scores_v, int num_tokens) {
+    OP_SCOPE("weighted_v",true);
     constexpr int GQA_ATTN_SCORES_TO_V_RATIO = 4;
     constexpr int HEAD_DIM = 64;
 
@@ -148,6 +159,7 @@ void attentionScoresTimesV(cublasHandle_t cublas_handle, __nv_bfloat16* attn_sco
 
         __nv_bfloat16* output_attn_head = attn_scores_v + head * HEAD_DIM;
 
+    operationBlas();
         cublasStatus_t status = cublasGemmEx(
             cublas_handle,
             CUBLAS_OP_N,
@@ -180,8 +192,10 @@ void attentionScoresTimesV(cublasHandle_t cublas_handle, __nv_bfloat16* attn_sco
 }
 
 void outputProjection(cublasHandle_t cublas_handle, __nv_bfloat16* attention_output, __nv_bfloat16* w_o, __nv_bfloat16* output, int num_tokens) {
+    OP_SCOPE("o_projection",true);
     const float alpha = 1.0f;
     const float beta = 0.0f;
+    operationBlas();
     cublasStatus_t status = cublasGemmEx(
         cublas_handle,
         CUBLAS_OP_T,
@@ -210,9 +224,11 @@ void outputProjection(cublasHandle_t cublas_handle, __nv_bfloat16* attention_out
 }
 
 void qProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+    OP_SCOPE("q_projection",true);
     const float alpha = 1.0f;
     const float beta = 0.0f;
 
+    operationBlas();
     cublasStatus_t status = cublasGemmEx(
         cublas_handle,
         CUBLAS_OP_T,
@@ -241,9 +257,11 @@ void qProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const
 }
 
 void kProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+    OP_SCOPE("k_projection",true);
     const float alpha = 1.0f;
     const float beta = 0.0f;
 
+    operationBlas();
     cublasStatus_t status = cublasGemmEx(
         cublas_handle,
         CUBLAS_OP_T,
@@ -272,9 +290,11 @@ void kProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const
 }
 
 void vProjection(cublasHandle_t cublas_handle, const __nv_bfloat16* input, const __nv_bfloat16* weights, __nv_bfloat16* output, int num_tokens) {
+    OP_SCOPE("v_projection",true);
     const float alpha = 1.0f;
     const float beta = 0.0f;
 
+    operationBlas();
     cublasStatus_t status = cublasGemmEx(
         cublas_handle,
         CUBLAS_OP_T,

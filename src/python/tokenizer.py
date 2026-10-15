@@ -2,10 +2,10 @@
 Tokenize text using HuggingFace tokenizers and dump token IDs.
 
 Usage:
-    python python/tokenizer.py "The capital of France is" --model meta-llama/Llama-3.2-1B
-    python python/tokenizer.py --decode --ids 791 6864 315 9822 374 --model meta-llama/Llama-3.2-1B
+    python src/python/tokenizer.py "The capital of France is" --model meta-llama/Llama-3.2-1B
+    python src/python/tokenizer.py --decode --ids 791 6864 315 9822 374 --model meta-llama/Llama-3.2-1B
 
-The C++ engine reads/writes plain text files of token IDs.
+Use --output to write the JSON token array consumed by the C++ engine.
 """
 
 import argparse

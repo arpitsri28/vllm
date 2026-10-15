@@ -1,0 +1,2 @@
+# Tokenization; version used for the recorded validation environment.
+transformers==5.19.0

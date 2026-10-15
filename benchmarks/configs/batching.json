@@ -1,0 +1,28 @@
+{
+  "prompts_file": "benchmarks/prompts.json",
+  "max_seq_len": 1024,
+  "seed": 0,
+  "eos_policy": "preserve engine EOS stopping; incomplete runs excluded",
+  "warmups": 2,
+  "repetitions": 5,
+  "cases": [
+    {
+      "mode": "batch",
+      "prompt_tokens": 128,
+      "output_tokens": 128,
+      "batch_size": 1
+    },
+    {
+      "mode": "batch",
+      "prompt_tokens": 128,
+      "output_tokens": 128,
+      "batch_size": 2
+    },
+    {
+      "mode": "batch",
+      "prompt_tokens": 128,
+      "output_tokens": 128,
+      "batch_size": 4
+    }
+  ]
+}

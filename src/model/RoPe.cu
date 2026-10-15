@@ -1,10 +1,13 @@
+#include <cstddef>
+#include "operation_profile.cuh"
 #include "../../include/rope.cuh"
 #include <iostream>
+#include <stdexcept>
 
 constexpr int HEAD_DIM = 64;
-__global__ void ropeKernel(__nv_bfloat16 *input, int num_tokens, int proj_dim, int position_offset) {
+__global__ void ropeKernel(__nv_bfloat16 *input, int num_tokens, int proj_dim, int position_offset, const int* positions) {
   if (2 * threadIdx.x + 1 + blockIdx.x * proj_dim < num_tokens * proj_dim) {
-    int position = position_offset + blockIdx.x;
+    int position = positions ? positions[blockIdx.x] : position_offset + blockIdx.x;
     int pair = threadIdx.x % (HEAD_DIM / 2);
     int head = threadIdx.x / (HEAD_DIM / 2);
     int x_index = blockIdx.x * proj_dim + head * HEAD_DIM + pair;
@@ -26,6 +29,7 @@ __global__ void ropeKernel(__nv_bfloat16 *input, int num_tokens, int proj_dim, i
 }
 
 void rope(__nv_bfloat16 *input, int num_tokens, int proj_dim, int position_offset) {
+    OP_SCOPE("rope",true);
     int num_threads = proj_dim / 2;
     if (num_threads > 1024)
     {
@@ -33,7 +37,8 @@ void rope(__nv_bfloat16 *input, int num_tokens, int proj_dim, int position_offse
         return;
     }
 
-    ropeKernel<<<num_tokens, num_threads>>>(input, num_tokens, proj_dim, position_offset);
+    operationKernel();
+    ropeKernel<<<num_tokens, num_threads>>>(input, num_tokens, proj_dim, position_offset, nullptr);
 #ifdef DEBUG
     cudaError error = cudaGetLastError();
     if (error != cudaError::cudaSuccess)
@@ -41,4 +46,17 @@ void rope(__nv_bfloat16 *input, int num_tokens, int proj_dim, int position_offse
         std::cout << "CUDA last error: " << cudaGetLastError() << std::endl;
     }
 #endif
+}
+
+void ropeBatch(__nv_bfloat16* input, int batch_size, int proj_dim, const int* positions) {
+    OP_SCOPE("rope",true);
+    if (!input || !positions || batch_size < 1 || batch_size > 4 || (proj_dim != 2048 && proj_dim != 512)) {
+        throw std::invalid_argument("Invalid batched RoPE arguments");
+    }
+    operationKernel();
+    ropeKernel<<<batch_size, proj_dim / 2>>>(input, batch_size, proj_dim, 0, positions);
+    cudaError_t status = cudaGetLastError();
+    if (status != cudaSuccess) {
+        throw std::runtime_error(cudaGetErrorString(status));
+    }
 }
